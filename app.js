@@ -1,6 +1,6 @@
-import * as G from './gear.js';
-import * as D from './dice.js';
-import { HOST_HASH } from './config.js';
+import * as G from './gear.js?v=4';
+import * as D from './dice.js?v=4';
+import { HOST_HASH } from './config.js?v=4';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js' : './db-firebase.js'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=4' : './db-firebase.js?v=4'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -564,35 +564,22 @@ $('btnAddGuest').addEventListener('click', async () => {
   $('btnAddGuest').disabled = false;
 });
 
-/* ---------- background sound: psy-radiation ambience, looped without gaps ---------- */
-const LOOP_LEN = 190.59;
-const AMB = {ctx:null, started:false, on:ls.get('zone-sound') !== 'off'};
-async function startAmbience(){
-  if (AMB.started || !AMB.on) return;
-  AMB.started = true;
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
-    const ctx = AMB.ctx = new Ctx();
-    const buf = await ctx.decodeAudioData(await (await fetch('audio/psy-radiation.mp3')).arrayBuffer());
-    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
-    if (buf.duration > LOOP_LEN + 0.01){ src.loopStart = Math.min(0.04, buf.duration - LOOP_LEN); src.loopEnd = src.loopStart + LOOP_LEN; }
-    const gain = ctx.createGain(); gain.gain.value = 0;
-    src.connect(gain).connect(ctx.destination);
-    src.start(0, src.loopStart || 0);
-    gain.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 4);
-    if (!AMB.on) ctx.suspend();
-  } catch (e) { console.error(e); AMB.started = false; }
+/* ---------- background sound: psy-radiation ambience ---------- */
+const AMB = {el:null, on:ls.get('zone-sound') !== 'off'};
+function ambience(){
+  if (!AMB.el){ const au = new Audio('audio/psy-radiation.mp3?v=2'); au.loop = true; au.preload = 'auto'; au.volume = 1; au.setAttribute('playsinline', ''); AMB.el = au; }
+  return AMB.el;
 }
+function playAmbience(){ if (!AMB.on) return; const p = ambience().play(); if (p && p.catch) p.catch(e => console.warn('sound waiting for a tap', e)); }
 function renderSound(){ const b = $('soundBtn'); b.setAttribute('aria-pressed', AMB.on); b.textContent = AMB.on ? 'Sound on' : 'Sound off'; }
 $('soundBtn').addEventListener('click', () => {
   AMB.on = !AMB.on; ls.set('zone-sound', AMB.on ? 'on' : 'off'); renderSound();
-  if (AMB.on){ if (!AMB.started) startAmbience(); else AMB.ctx.resume(); } else if (AMB.ctx) AMB.ctx.suspend();
+  if (AMB.on) playAmbience(); else if (AMB.el) AMB.el.pause();
 });
-// Browsers only allow sound after the first tap or key press.
-['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, e => {
+// Browsers only allow sound after a tap or key press, so every interaction nudges it on.
+['pointerdown', 'touchend', 'keydown'].forEach(ev => window.addEventListener(ev, e => {
   if (e.target && e.target.id === 'soundBtn') return;
-  if (!AMB.on) return;
-  if (!AMB.started) startAmbience(); else if (AMB.ctx && AMB.ctx.state === 'suspended') AMB.ctx.resume();
+  if (AMB.on && (!AMB.el || AMB.el.paused)) playAmbience();
 }, {passive:true}));
 renderSound();
 

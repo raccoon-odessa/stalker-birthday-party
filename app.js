@@ -564,4 +564,36 @@ $('btnAddGuest').addEventListener('click', async () => {
   $('btnAddGuest').disabled = false;
 });
 
+/* ---------- background sound: psy-radiation ambience, looped without gaps ---------- */
+const LOOP_LEN = 190.59;
+const AMB = {ctx:null, started:false, on:ls.get('zone-sound') !== 'off'};
+async function startAmbience(){
+  if (AMB.started || !AMB.on) return;
+  AMB.started = true;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
+    const ctx = AMB.ctx = new Ctx();
+    const buf = await ctx.decodeAudioData(await (await fetch('audio/psy-radiation.mp3')).arrayBuffer());
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    if (buf.duration > LOOP_LEN + 0.01){ src.loopStart = Math.min(0.04, buf.duration - LOOP_LEN); src.loopEnd = src.loopStart + LOOP_LEN; }
+    const gain = ctx.createGain(); gain.gain.value = 0;
+    src.connect(gain).connect(ctx.destination);
+    src.start(0, src.loopStart || 0);
+    gain.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 4);
+    if (!AMB.on) ctx.suspend();
+  } catch (e) { console.error(e); AMB.started = false; }
+}
+function renderSound(){ const b = $('soundBtn'); b.setAttribute('aria-pressed', AMB.on); b.textContent = AMB.on ? 'Sound on' : 'Sound off'; }
+$('soundBtn').addEventListener('click', () => {
+  AMB.on = !AMB.on; ls.set('zone-sound', AMB.on ? 'on' : 'off'); renderSound();
+  if (AMB.on){ if (!AMB.started) startAmbience(); else AMB.ctx.resume(); } else if (AMB.ctx) AMB.ctx.suspend();
+});
+// Browsers only allow sound after the first tap or key press.
+['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, e => {
+  if (e.target && e.target.id === 'soundBtn') return;
+  if (!AMB.on) return;
+  if (!AMB.started) startAmbience(); else if (AMB.ctx && AMB.ctx.state === 'suspended') AMB.ctx.resume();
+}, {passive:true}));
+renderSound();
+
 main();

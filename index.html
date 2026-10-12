@@ -201,6 +201,13 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 @media (prefers-reduced-motion:reduce){.die{transition:none}}
 
 [hidden]{display:none!important}
+.bar-top{gap:10px}
+.sound{margin-left:auto;background:transparent;border:1px solid var(--line-hi);color:var(--muted);font-family:var(--mono);font-size:.8rem;padding:5px 9px;cursor:pointer;white-space:nowrap}
+.sound[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.sound::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;background:currentColor;vertical-align:1px}
+.sound[aria-pressed="true"]::before{animation:blink 1.6s steps(1) infinite}
+@keyframes blink{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.sound::before{animation:none!important}}
 .opt-group{grid-column:1/-1;margin-top:10px}
 .opt-group:first-child{margin-top:0}
 .boot{max-width:640px;margin:16vh auto 0;padding:0 16px;display:flex;flex-direction:column;gap:14px}
@@ -234,6 +241,7 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
   <div class="bar-in">
     <div class="bar-top">
       <span class="brand">PDA<span class="long"> // Birthday in the Zone</span></span>
+      <button type="button" class="sound" id="soundBtn" aria-pressed="true" title="Background sound">Sound on</button>
       <div class="me"><canvas id="meIcon" width="38" height="38" aria-hidden="true"></canvas><div><b id="meName">Stalker</b><small class="mono" id="meCoupons">0 coupons</small></div></div>
     </div>
     <nav class="tabs" role="tablist" aria-label="PDA sections">

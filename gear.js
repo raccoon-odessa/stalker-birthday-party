@@ -1,6 +1,6 @@
 // Pixel portraits (36x36) and S.T.A.L.K.E.R. 2 gear/artefact data.
 const N = 36;
-const PAL = ['#0d0f0c','#1f221d','#2f332b','#474c40','#646a59','#8a8f7a','#b8b9a6','#e6e2d3','#3b4a2a','#556b35','#7a8f45','#4a3a2a','#6e5238','#94704a','#b89468','#2a2522','#3e3833','#5e1f1a','#9a2f24','#c8432f','#20304a','#34557a','#5b82a8','#8fb3cf','#2e4a2e','#3f6b38','#5f9448','#a85a1c','#d9822b','#f0b043','#f2d27a','#6d6d6d','#9a9a9a','#c7c7c7','#3a3d42','#575c63','#7d848c','#f1c9a5','#dba57f','#b97a55','#8a5636','#5c3824','#2c3d3a','#6f9a8c','#b5832a','#1a1a1a','#c7a76a','#a64b2a','#4f3524','#8b8b84','#2f8f8a','#7a5aa8','#e3c13a'];
+const PAL = ['#0d0f0c','#1f221d','#2f332b','#474c40','#646a59','#8a8f7a','#b8b9a6','#e6e2d3','#3b4a2a','#556b35','#7a8f45','#4a3a2a','#6e5238','#94704a','#b89468','#2a2522','#3e3833','#5e1f1a','#9a2f24','#c8432f','#20304a','#34557a','#5b82a8','#8fb3cf','#2e4a2e','#3f6b38','#5f9448','#a85a1c','#d9822b','#f0b043','#f2d27a','#6d6d6d','#9a9a9a','#c7c7c7','#3a3d42','#575c63','#7d848c','#f1c9a5','#dba57f','#b97a55','#8a5636','#5c3824','#2c3d3a','#6f9a8c','#b5832a','#1a1a1a','#c7a76a','#a64b2a','#4f3524','#8b8b84','#2f8f8a','#7a5aa8','#e3c13a','#a89566','#7d6c45','#4d4560','#6f6588','#18233a','#7a1c2c','#6b6a3a','#d8d6cc','#5a5e3a'];
 const CH = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const SKINS = [37,38,39,40,41];
 const SKD = {37:38,38:39,39:40,40:41,41:15}, SKDD = {37:39,38:40,39:41,40:15,41:1};
@@ -11,17 +11,69 @@ const torso = (d, c) => { d.S(24,9,14,c); d.S(25,6,15,c); d.S(26,4,16,c); d.S(27
 const shadeR = (d, c) => d.R(31,28,33,35,c);
 const arms = (d, c) => { d.R(8,30,8,35,c); d.R(27,30,27,35,c); };
 const SUITS = [
-  {label:'Debut Suit', front(d){ torso(d,12); shadeR(d,11); arms(d,11); d.R(13,24,15,26,13); d.R(20,24,22,26,13); d.R(16,26,19,35,4); d.R(15,27,15,35,13); d.R(20,27,20,35,13); d.R(10,31,13,32,11); }},
-  {label:'Sunrise Suit', back(d){ d.R(11,21,24,24,8); }, front(d){ torso(d,9); shadeR(d,8); arms(d,8); d.S(24,12,14,8); d.S(25,13,15,8); d.R(13,25,14,29,2); d.R(21,25,22,29,2); d.R(9,29,26,29,2); [[10,13],[16,19],[22,25]].forEach(([a,b]) => { d.R(a,30,b,33,3); d.R(a,30,b,30,2); }); }},
-  {label:'Bandit Jacket', front(d){ torso(d,15); shadeR(d,1); arms(d,1); d.R(12,24,15,27,16); d.R(20,24,23,27,16); d.R(16,26,19,35,20); d.R(16,26,16,35,7); d.R(19,26,19,35,7); d.R(15,28,15,35,16); d.R(20,28,20,35,16); }},
-  {label:'Wind of Freedom', front(d){ torso(d,25); shadeR(d,24); arms(d,24); d.R(13,23,15,25,24); d.R(20,23,22,25,24); d.R(11,28,24,33,24); d.R(11,28,24,28,26); d.set(12,30,26); d.set(23,30,26); d.RM(2,26,6,29,26); d.RM(2,26,6,26,10); }},
-  {label:'PSZ-9D Duty Armor', front(d){ torso(d,1); shadeR(d,15); d.R(12,22,14,25,2); d.R(21,22,23,25,2); d.RM(2,25,8,29,17); d.RM(2,25,8,25,18); d.R(12,27,23,34,34); d.R(12,27,23,27,35); d.R(12,30,23,30,1); d.R(17,27,18,34,1); }},
-  {label:'Mercenary Suit', front(d){ torso(d,21); for (let y = 24; y < N; y++) for (let x = 2; x < 34; x++) if (d.get(x,y) === 21){ const h = (x*7 + y*13 + ((x*y) % 5)) % 9; if (h === 0 || h === 4) d.set(x,y,20); else if (h === 2) d.set(x,y,22); } d.R(12,24,13,27,34); d.R(22,24,23,27,34); d.R(10,27,25,35,34); d.R(11,30,14,33,35); d.R(21,30,24,33,35); d.R(16,31,19,34,35); }},
-  {label:'SEVA-V Suit', hood:true, back(d){ d.S(4,14,17,9); d.S(5,12,17,9); for (let y = 6; y <= 21; y++) d.S(y,10,17,9); d.S(22,11,17,9); d.S(23,12,17,9); d.R(24,6,25,21,8); }, front(d){ torso(d,9); shadeR(d,8); arms(d,8); d.R(13,22,22,25,3); d.R(13,22,22,22,4); d.R(10,28,15,34,10); d.R(20,28,25,34,10); d.R(17,25,18,35,3); }},
-  {label:'SSP-99 Ecologist', front(d){ torso(d,28); shadeR(d,27); arms(d,27); d.R(12,22,23,25,32); d.R(12,22,23,22,33); d.R(14,28,21,33,33); d.set(15,29,50); d.set(16,29,29); d.set(17,29,19); for (let y = 25; y <= 31; y++){ d.set(23,y,y%2?31:1); d.set(24,y,y%2?31:1); } }},
-  {label:'Exoskeleton', front(d){ torso(d,35); for (let y = 27; y < N; y++) d.S(y,1,17,35); d.R(31,28,34,35,34); d.R(11,26,24,34,36); d.R(11,30,24,30,34); d.R(17,26,18,34,34); d.R(10,27,10,35,31); d.R(25,27,25,35,31); d.RM(1,24,9,30,36); d.RM(1,30,9,30,34); d.RM(1,24,1,30,34); d.R(12,22,14,25,34); d.R(21,22,23,25,34); }},
-  {label:'PSZ-12V Bulat', front(d){ torso(d,3); shadeR(d,2); arms(d,2); d.R(12,23,23,25,2); d.R(9,26,26,35,8); d.R(9,30,26,30,2); d.R(9,33,26,33,2); d.RM(2,25,7,30,8); d.RM(2,25,7,25,9); }}
+  {label:'Debut Suit', group:'Jackets', front(d){ torso(d,12); shadeR(d,11); arms(d,11); d.R(13,24,15,26,13); d.R(20,24,22,26,13); d.R(16,26,19,35,4); d.R(15,27,15,35,13); d.R(20,27,20,35,13); d.R(10,31,13,32,11); }},
+  {label:'Sunrise Suit', group:'Light suits', back(d){ d.R(11,21,24,24,8); }, front(d){ torso(d,9); shadeR(d,8); arms(d,8); d.S(24,12,14,8); d.S(25,13,15,8); d.R(13,25,14,29,2); d.R(21,25,22,29,2); d.R(9,29,26,29,2); [[10,13],[16,19],[22,25]].forEach(([a,b]) => { d.R(a,30,b,33,3); d.R(a,30,b,30,2); }); }},
+  {label:'Bandit Jacket', group:'Jackets', front(d){ torso(d,15); shadeR(d,1); arms(d,1); d.R(12,24,15,27,16); d.R(20,24,23,27,16); d.R(16,26,19,35,20); d.R(16,26,16,35,7); d.R(19,26,19,35,7); d.R(15,28,15,35,16); d.R(20,28,20,35,16); }},
+  {label:'Wind of Freedom', group:'Light suits', front(d){ torso(d,25); shadeR(d,24); arms(d,24); d.R(13,23,15,25,24); d.R(20,23,22,25,24); d.R(11,28,24,33,24); d.R(11,28,24,28,26); d.set(12,30,26); d.set(23,30,26); d.RM(2,26,6,29,26); d.RM(2,26,6,26,10); }},
+  {label:'PSZ-9D Duty Armor', group:'Armour', front(d){ torso(d,1); shadeR(d,15); d.R(12,22,14,25,2); d.R(21,22,23,25,2); d.RM(2,25,8,29,17); d.RM(2,25,8,25,18); d.R(12,27,23,34,34); d.R(12,27,23,27,35); d.R(12,30,23,30,1); d.R(17,27,18,34,1); }},
+  {label:'Mercenary Suit', group:'Light suits', front(d){ torso(d,21); for (let y = 24; y < N; y++) for (let x = 2; x < 34; x++) if (d.get(x,y) === 21){ const h = (x*7 + y*13 + ((x*y) % 5)) % 9; if (h === 0 || h === 4) d.set(x,y,20); else if (h === 2) d.set(x,y,22); } d.R(12,24,13,27,34); d.R(22,24,23,27,34); d.R(10,27,25,35,34); d.R(11,30,14,33,35); d.R(21,30,24,33,35); d.R(16,31,19,34,35); }},
+  {label:'SEVA-V Suit', group:'Sealed and scientific', hood:true, back(d){ d.S(4,14,17,9); d.S(5,12,17,9); for (let y = 6; y <= 21; y++) d.S(y,10,17,9); d.S(22,11,17,9); d.S(23,12,17,9); d.R(24,6,25,21,8); }, front(d){ torso(d,9); shadeR(d,8); arms(d,8); d.R(13,22,22,25,3); d.R(13,22,22,22,4); d.R(10,28,15,34,10); d.R(20,28,25,34,10); d.R(17,25,18,35,3); }},
+  {label:'SSP-99 Ecologist', group:'Sealed and scientific', front(d){ torso(d,28); shadeR(d,27); arms(d,27); d.R(12,22,23,25,32); d.R(12,22,23,22,33); d.R(14,28,21,33,33); d.set(15,29,50); d.set(16,29,29); d.set(17,29,19); for (let y = 25; y <= 31; y++){ d.set(23,y,y%2?31:1); d.set(24,y,y%2?31:1); } }},
+  {label:'Exoskeleton', group:'Exoskeletons', front(d){ torso(d,35); for (let y = 27; y < N; y++) d.S(y,1,17,35); d.R(31,28,34,35,34); d.R(11,26,24,34,36); d.R(11,30,24,30,34); d.R(17,26,18,34,34); d.R(10,27,10,35,31); d.R(25,27,25,35,31); d.RM(1,24,9,30,36); d.RM(1,30,9,30,34); d.RM(1,24,1,30,34); d.R(12,22,14,25,34); d.R(21,22,23,25,34); }},
+  {label:'PSZ-12V Bulat', group:'Armour', front(d){ torso(d,3); shadeR(d,2); arms(d,2); d.R(12,23,23,25,2); d.R(9,26,26,35,8); d.R(9,30,26,30,2); d.R(9,33,26,33,2); d.RM(2,25,7,30,8); d.RM(2,25,7,25,9); }}
 ];
+
+// Archetypes for the rest of the S.T.A.L.K.E.R. 2 suits. p = {c: main, C: shade, x: secondary, y: trim}
+const camo = (d, c, a, b) => { for (let y = 24; y < N; y++) for (let x = 1; x < 35; x++) if (d.get(x,y) === c){ const h = (x*7 + y*13 + ((x*y) % 5)) % 9; if (h === 0 || h === 4) d.set(x,y,a); else if (h === 2) d.set(x,y,b); } };
+const ARCH = {
+  jacket:(p) => ({front(d){ torso(d,p.c); shadeR(d,p.C); arms(d,p.C);
+    if (p.zip){ d.R(13,23,22,25,p.y); d.R(17,25,18,35,p.C); d.R(16,28,16,30,p.x); d.R(19,28,19,30,p.x); }
+    else { d.R(13,24,15,26,p.y); d.R(20,24,22,26,p.y); d.R(16,26,19,35,p.x); d.R(15,27,15,35,p.y); d.R(20,27,20,35,p.y); }
+    if (p.vest){ d.R(10,27,25,35,p.vest); d.R(10,27,25,27,p.y); d.R(11,30,14,33,p.C); d.R(21,30,24,33,p.C); }
+    if (p.patch){ d.R(4,31,7,34,p.patch); d.R(23,32,25,35,p.patch2 || p.patch); } }}),
+  coat:(p) => ({front(d){ torso(d,p.c); shadeR(d,p.C); arms(d,p.C); d.R(12,22,14,26,p.C); d.R(21,22,23,26,p.C); d.R(17,27,18,35,p.C); d.set(16,29,p.y); d.set(16,32,p.y); d.set(19,29,p.y); d.set(19,32,p.y); for (let t = 0; t < 10; t++){ d.set(9 + t, 26 + t, p.x); d.set(10 + t, 26 + t, p.x); } }}),
+  light:(p) => ({back(d){ d.R(11,21,24,24,p.C); }, front(d){ torso(d,p.c); if (p.camo) camo(d,p.c,p.C,p.x); shadeR(d,p.C); arms(d,p.C); d.S(24,12,14,p.C); d.S(25,13,15,p.C); d.R(13,25,14,29,p.x); d.R(21,25,22,29,p.x); d.R(9,29,26,29,p.x); [[10,13],[16,19],[22,25]].forEach(([a,b]) => { d.R(a,30,b,33,p.y); d.R(a,30,b,30,p.x); }); }}),
+  armor:(p) => ({front(d){ torso(d,p.c); if (p.camo) camo(d,p.c,p.C,p.x); shadeR(d,p.C); arms(d,p.C); d.R(12,23,14,25,p.x); d.R(21,23,23,25,p.x); d.R(10,27,25,34,p.x); d.R(10,27,25,27,p.y); d.R(10,31,25,31,p.C); d.R(17,28,18,34,p.C); d.RM(2,25,7,29,p.x); d.RM(2,25,7,25,p.y); }}),
+  heavy:(p) => ({front(d){ torso(d,p.c); if (p.camo) camo(d,p.c,p.C,p.y); shadeR(d,p.C); d.R(12,22,23,25,p.C); d.R(12,22,23,22,p.x); d.R(9,26,26,35,p.x); d.R(9,26,26,26,p.y); d.R(9,30,26,30,p.C); d.R(9,33,26,33,p.C); d.R(17,27,18,35,p.C); d.RM(1,24,8,30,p.x); d.RM(1,24,8,24,p.y); d.RM(1,30,8,30,p.C); }}),
+  sealed:(p) => ({hood:true, back(d){ d.S(4,14,17,p.c); d.S(5,12,17,p.c); for (let y = 6; y <= 21; y++) d.S(y,10,17,p.c); d.S(22,11,17,p.c); d.S(23,12,17,p.c); d.R(24,6,25,21,p.C); }, front(d){ torso(d,p.c); shadeR(d,p.C); arms(d,p.C); d.R(13,22,22,25,p.y); d.R(13,22,22,22,p.x); d.R(10,28,15,34,p.x); d.R(20,28,25,34,p.x); d.R(17,25,18,35,p.y); }}),
+  lab:(p) => ({hood:true, back(d){ d.S(4,14,17,p.c); d.S(5,12,17,p.c); for (let y = 6; y <= 21; y++) d.S(y,10,17,p.c); d.S(22,11,17,p.c); d.S(23,12,17,p.c); d.R(24,6,25,21,p.C); }, front(d){ torso(d,p.c); shadeR(d,p.C); arms(d,p.C); d.R(12,22,23,25,p.y); d.R(12,22,23,22,33); d.R(14,28,21,33,p.x); d.set(15,29,50); d.set(16,29,29); d.set(17,29,19); d.RM(3,28,6,35,p.x); for (let y = 25; y <= 31; y++){ d.set(23,y,y%2?31:1); d.set(24,y,y%2?31:1); } }}),
+  exo:(p) => ({front(d){ torso(d,p.c); for (let y = 27; y < N; y++) d.S(y,1,17,p.c); d.R(31,28,34,35,p.C); d.R(11,26,24,34,p.x); d.R(11,30,24,30,p.C); d.R(17,26,18,34,p.C); d.R(10,27,10,35,p.y); d.R(25,27,25,35,p.y); d.RM(1,24,9,30,p.x); d.RM(1,30,9,30,p.C); d.RM(1,24,1,30,p.C); d.R(12,22,14,25,p.C); d.R(21,22,23,25,p.C); }})
+};
+[
+  ['Leather Jacket','Jackets','jacket',{c:11,C:15,x:31,y:12}],
+  ['Armored Bandit Jacket','Jackets','jacket',{c:15,C:1,x:20,y:16,vest:3}],
+  ['Tourist Suit','Jackets','jacket',{c:21,C:20,x:23,y:22,zip:true}],
+  ['Wanderer Suit','Jackets','coat',{c:13,C:12,x:11,y:30}],
+  ['Marauder Suit','Jackets','jacket',{c:12,C:11,x:4,y:13,vest:9,patch:25,patch2:21}],
+  ['Mercenary\u2019s Light Suit','Light suits','light',{c:21,C:20,x:34,y:35,camo:true}],
+  ['X7 Suit','Light suits','light',{c:2,C:1,x:34,y:35}],
+  ['PSZ-5D Universal Protection','Armour','armor',{c:2,C:1,x:34,y:18}],
+  ['PSZ-5V Guardian of Freedom','Armour','armor',{c:25,C:24,x:9,y:26}],
+  ['PSZ-5I Hawk','Armour','armor',{c:53,C:54,x:3,y:52}],
+  ['PSZ-9I Falcon','Armour','heavy',{c:54,C:11,x:53,y:52}],
+  ['PSZ-9N Wolfhound','Armour','heavy',{c:55,C:57,x:56,y:51}],
+  ['PSZ-20W Convoy','Armour','armor',{c:21,C:20,x:57,y:23}],
+  ['PSZ-21W Shturm','Armour','heavy',{c:57,C:20,x:21,y:23}],
+  ['PSZ-7 Military Body Armor','Armour','armor',{c:9,C:8,x:61,y:10}],
+  ['Berill-5M Armored Suit','Armour','heavy',{c:59,C:8,x:9,y:10,camo:true}],
+  ['Corundum Suit','Armour','armor',{c:3,C:2,x:58,y:19}],
+  ['Zircon Suit','Armour','armor',{c:31,C:34,x:32,y:33}],
+  ['OZK Explorer\u2019s Suit','Sealed and scientific','sealed',{c:59,C:8,x:61,y:3}],
+  ['SEVA Suit','Sealed and scientific','sealed',{c:13,C:12,x:14,y:3}],
+  ['SEVA-D Suit','Sealed and scientific','sealed',{c:2,C:1,x:17,y:18}],
+  ['SEVA-I Suit','Sealed and scientific','sealed',{c:53,C:54,x:30,y:54}],
+  ['SSP-100 Discovery','Sealed and scientific','lab',{c:60,C:6,x:28,y:31}],
+  ['SSP-100I Survey','Sealed and scientific','lab',{c:52,C:44,x:3,y:31}],
+  ['SSP-100M SIRCAA','Sealed and scientific','lab',{c:22,C:21,x:60,y:31}],
+  ['Liberty Exoskeleton','Exoskeletons','exo',{c:25,C:24,x:26,y:31}],
+  ['Bulwark Exosuit','Exoskeletons','exo',{c:1,C:15,x:17,y:18}],
+  ['Brummbar Exoskeleton','Exoskeletons','exo',{c:9,C:8,x:61,y:31}],
+  ['Cuirass Exoskeleton','Exoskeletons','exo',{c:21,C:20,x:22,y:31}],
+  ['Diamond Exoskeleton','Exoskeletons','exo',{c:33,C:32,x:6,y:36}],
+  ['Operator Exoskeleton','Exoskeletons','exo',{c:34,C:1,x:2,y:31}],
+  ['Ruby Exosuit','Exoskeletons','exo',{c:58,C:17,x:18,y:31}]
+].forEach(([label, group, a, p]) => SUITS.push(Object.assign({label, group}, ARCH[a](p))));
+const SUIT_GROUPS = ['Jackets','Light suits','Armour','Sealed and scientific','Exoskeletons'];
 const fullMask = (d, c, sh) => { d.S(6,14,17,c); d.S(7,13,17,c); for (let y = 8; y <= 19; y++) d.S(y,12,17,c); d.S(20,13,17,c); d.S(21,14,17,c); for (let y = 11; y <= 17; y++){ d.set(11,y,c); d.set(24,y,c); } d.R(23,8,23,19,sh); d.R(24,11,24,17,sh); };
 const dome = (d, c, hi, sh) => { d.S(5,14,17,c); d.S(6,12,17,c); for (let y = 7; y <= 10; y++) d.S(y,11,17,c); d.RM(11,11,12,13,c); d.R(14,6,17,6,hi); d.R(12,7,13,8,hi); d.R(23,6,24,13,sh); };
 const strap = d => { d.RM(12,14,12,17,1); d.RM(13,18,13,18,1); d.RM(14,19,14,19,1); };
@@ -206,4 +258,4 @@ const rarColor = r => ['var(--r0)','var(--r1)','var(--r2)','var(--r3)'][r];
 function randomLook(r){ const pick = n => Math.floor(r() * n); return {skin:pick(SKINS.length), hairC:pick(HAIRS.length), face:pick(FACES.length), helmet:pick(HELMETS.length), suit:pick(SUITS.length), faction:pick(FACTIONS.length)}; }
 function randomArt(r, maxR){ const pool = ART.filter(a => a.r <= maxR); const w = pool.map(a => [8,4,2,1][a.r]); let t = r() * w.reduce((s, v) => s + v, 0); for (let i = 0; i < pool.length; i++){ t -= w[i]; if (t <= 0) return pool[i].name; } return pool[0].name; }
 function fixLook(L){ L = Object.assign({}, L || {}); const lim = (k, n) => { if (!(Number.isInteger(L[k]) && L[k] >= 0 && L[k] < n)) L[k] = 0; }; lim('skin',SKINS.length); lim('hairC',HAIRS.length); lim('face',FACES.length); lim('helmet',HELMETS.length); lim('suit',SUITS.length); lim('faction',FACTIONS.length); return L; }
-export { paintFromCustom, N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };
+export { SUIT_GROUPS, paintFromCustom, N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };

@@ -201,6 +201,8 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 @media (prefers-reduced-motion:reduce){.die{transition:none}}
 
 [hidden]{display:none!important}
+.opt-group{grid-column:1/-1;margin-top:10px}
+.opt-group:first-child{margin-top:0}
 .boot{max-width:640px;margin:16vh auto 0;padding:0 16px;display:flex;flex-direction:column;gap:14px}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--accent);padding:10px 16px;font-family:var(--mono);font-size:.9rem;z-index:30;max-width:calc(100% - 32px)}
 .tabs .badge{display:inline-block;margin-left:6px;background:var(--danger);color:#fff;font-family:var(--mono);font-size:.75rem;padding:0 5px;line-height:1.5;vertical-align:2px}

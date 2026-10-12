@@ -120,7 +120,7 @@ $('rsvpNo').addEventListener('click', () => { savePlayer({rsvp:me().rsvp === 'no
 /* ---------- stalker ---------- */
 const GEAR = [
   {id:'helmet', label:'Helmet', key:'helmet', options:G.HELMETS},
-  {id:'suit', label:'Suit', key:'suit', options:G.SUITS},
+  {id:'suit', label:'Suit', key:'suit', options:G.SUITS, groups:G.SUIT_GROUPS},
   {id:'face', label:'Face', key:'face', options:G.FACES, swatches:true},
   {id:'faction', label:'Faction'}
 ];
@@ -143,13 +143,15 @@ function renderStalker(){
   $('subtabs').replaceChildren(...GEAR.map(t => { const b = el('button', 'btn', t.label); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', t.id === S.gear); b.setAttribute('aria-pressed', t.id === S.gear); b.dataset.k = 'g' + t.id; b.addEventListener('click', () => { S.gear = t.id; renderStalker(); }); return b; }));
   $('opts').hidden = !tab.options; $('factions').hidden = tab.id !== 'faction';
   $('swGroup1').hidden = $('swGroup2').hidden = !tab.swatches;
-  $('opts').replaceChildren(...(tab.options || []).map((o, i) => {
+  const optNodes = (tab.options || []).map((o, i) => {
     const b = el('button', 'opt'); b.type = 'button'; b.setAttribute('aria-pressed', p.look[tab.key] === i); b.dataset.k = 'o' + i;
     b.append(G.portrait({look:Object.assign({}, p.look, {[tab.key]:i}), paint:p.paint}), el('span', '', o.label));
     if (o.note) b.append(el('small', '', o.note));
     b.addEventListener('click', () => setLook({[tab.key]:i}));
     return b;
-  }));
+  });
+  if (tab.groups) $('opts').replaceChildren(...tab.groups.flatMap(gr => [el('h3', 'opt-group', gr)].concat(optNodes.filter((n, i) => tab.options[i].group === gr))));
+  else $('opts').replaceChildren(...optNodes);
   if (tab.id === 'faction') $('factions').replaceChildren(...G.FACTIONS.map((f, i) => {
     const b = el('button', 'faction'); b.type = 'button'; b.setAttribute('aria-pressed', p.look.faction === i); b.dataset.k = 'f' + i;
     const chip = el('i'); chip.style.background = G.PAL[f.c];

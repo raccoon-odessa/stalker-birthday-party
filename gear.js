@@ -125,7 +125,6 @@ const canvas = (w, h) => { const c = document.createElement('canvas'); c.width =
 /* ---------- portrait composition ---------- */
 function compose(p){
   const g = new Int8Array(N * N).fill(-1);
-  if (p.custom && p.custom.length === N * N){ for (let i = 0; i < N * N; i++){ const v = CH.indexOf(p.custom[i]); g[i] = v >= 0 && v < PAL.length ? v : -1; } return g; }
   const set = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N && c >= 0) g[y * N + x] = c; };
   const R = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c); };
   const d = {set, R, get:(x, y) => g[y * N + x],
@@ -148,7 +147,17 @@ function compose(p){
   suit.front(d);
   R(26,26,30,30,1); R(27,27,29,29,FACTIONS[L.faction].c);
   helmet.draw(d);
+  // hand-painted layer: '.' = untouched, '_' = erased, otherwise a palette colour
+  if (p.paint && p.paint.length === N * N) for (let i = 0; i < N * N; i++){ const ch = p.paint[i]; if (ch === '.') continue; if (ch === '_'){ g[i] = -1; continue; } const v = CH.indexOf(ch); if (v >= 0 && v < PAL.length) g[i] = v; }
   return g;
+}
+// Turns an old full-picture drawing into a layer of differences from the gear.
+function paintFromCustom(custom, look){
+  if (!custom || custom.length !== N * N) return null;
+  const base = compose({look});
+  let out = '', any = false;
+  for (let i = 0; i < N * N; i++){ const v = CH.indexOf(custom[i]), c = v >= 0 && v < PAL.length ? v : -1; if (c === base[i]) out += '.'; else { out += c < 0 ? '_' : CH[c]; any = true; } }
+  return any ? out : null;
 }
 const toStr = g => Array.from(g, v => v < 0 ? '.' : CH[v]).join('');
 
@@ -197,4 +206,4 @@ const rarColor = r => ['var(--r0)','var(--r1)','var(--r2)','var(--r3)'][r];
 function randomLook(r){ const pick = n => Math.floor(r() * n); return {skin:pick(SKINS.length), hairC:pick(HAIRS.length), face:pick(FACES.length), helmet:pick(HELMETS.length), suit:pick(SUITS.length), faction:pick(FACTIONS.length)}; }
 function randomArt(r, maxR){ const pool = ART.filter(a => a.r <= maxR); const w = pool.map(a => [8,4,2,1][a.r]); let t = r() * w.reduce((s, v) => s + v, 0); for (let i = 0; i < pool.length; i++){ t -= w[i]; if (t <= 0) return pool[i].name; } return pool[0].name; }
 function fixLook(L){ L = Object.assign({}, L || {}); const lim = (k, n) => { if (!(Number.isInteger(L[k]) && L[k] >= 0 && L[k] < n)) L[k] = 0; }; lim('skin',SKINS.length); lim('hairC',HAIRS.length); lim('face',FACES.length); lim('helmet',HELMETS.length); lim('suit',SUITS.length); lim('faction',FACTIONS.length); return L; }
-export { N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };
+export { paintFromCustom, N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };

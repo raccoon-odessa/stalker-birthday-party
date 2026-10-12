@@ -21,9 +21,22 @@ export const canScore = vals => { const c = counts(vals); return c[1] > 0 || c[5
 
 const d6 = () => 1 + Math.floor(Math.random() * 6);
 const say = (s, text) => { s.log.unshift(text); s.log = s.log.slice(0, 30); };
+// Best score any subset of these dice can make (dice that don't fit are simply ignored).
+export function bestSub(vals){ let b = 0; for (let m = 1; m < (1 << vals.length); m++){ const sc = scoreOf(vals.filter((_, i) => (m >> i) & 1)); if (sc > b) b = sc; } return b; }
 export const live = s => s.dice.filter(d => !d.used);
+export const held = s => s.dice.filter(d => d.used).map(d => d.v);
 export const selected = s => s.phase === 'choose' ? live(s).filter(d => d.sel) : [];
-export const selScore = s => scoreOf(selected(s).map(d => d.v));
+// What the turn is worth if the selected dice are set aside now.
+export const projected = s => s.turnPts + bestSub(held(s).concat(selected(s).map(d => d.v)));
+export const turnValue = s => s.turnPts + bestSub(held(s));
+// Selected dice can be set aside and the rest thrown again.
+export function canThrowOn(s){
+  if (s.phase === 'start') return true;
+  const sel = selected(s); if (s.phase !== 'choose' || !sel.length) return false;
+  if (live(s).length > sel.length) return true;
+  return scoreOf(held(s).concat(sel.map(d => d.v))) > 0; // all six set aside: only if every die scores
+}
+export const canBank = s => s.phase === 'choose' && projected(s) > 0;
 
 export function fresh(names){
   return {names, scores:[0,0], turn:0, turnPts:0, phase:'start', rollN:0, note:'', winner:null,
@@ -32,12 +45,14 @@ export function fresh(names){
 function nextTurn(s){ s.turn = 1 - s.turn; s.turnPts = 0; s.phase = 'start'; s.dice.forEach(d => { d.used = false; d.sel = false; }); }
 
 export function roll(s){
+  const before = bestSub(held(s));
   const ds = live(s); ds.forEach(d => { d.v = d6(); d.sel = false; });
   s.rollN++; s.note = '';
   const who = s.names[s.turn], vals = ds.map(d => d.v);
   say(s, who + ' throws ' + vals.join(' '));
-  if (!canScore(vals)){
-    s.note = who + ' threw nothing that scores' + (s.turnPts ? ' and lost ' + s.turnPts.toLocaleString('en-US') : '') + '.';
+  if (bestSub(held(s).concat(vals)) <= before){
+    const lost = s.turnPts + before;
+    s.note = who + ' threw nothing that helps' + (lost ? ' and lost ' + lost.toLocaleString('en-US') : '') + '.';
     say(s, who + ' busts.');
     nextTurn(s);
     return false;
@@ -47,26 +62,30 @@ export function roll(s){
 }
 export function toggle(s, i){ const d = s.dice[i]; if (s.phase !== 'choose' || !d || d.used) return; d.sel = !d.sel; }
 function keep(s){
-  const sel = selected(s), sc = scoreOf(sel.map(d => d.v));
-  if (!(sc > 0)) return false;
+  const sel = selected(s);
+  if (!sel.length) return false;
   sel.forEach(d => { d.used = true; d.sel = false; });
-  s.turnPts += sc;
-  say(s, s.names[s.turn] + ' keeps ' + sel.map(d => d.v).join(' ') + ' for ' + sc + '.');
-  if (!live(s).length){ s.dice.forEach(d => d.used = false); say(s, 'All six used. Hot dice!'); }
+  say(s, s.names[s.turn] + ' sets aside ' + sel.map(d => d.v).join(' ') + '.');
+  if (!live(s).length){
+    const full = scoreOf(held(s));
+    if (full > 0){ s.turnPts += full; s.dice.forEach(d => d.used = false); say(s, 'All six score for ' + full + '. Hot dice!'); }
+  }
   return true;
 }
 export function throwOn(s){
-  if (s.phase === 'over') return;
-  if (s.phase === 'choose' && !keep(s)) return;
+  if (s.phase === 'over' || !canThrowOn(s)) return;
+  if (s.phase === 'choose') keep(s);
+  if (!live(s).length) return;
   roll(s);
 }
 export function bank(s){
-  if (s.phase !== 'choose' || !keep(s)) return;
-  const t = s.turn;
-  s.scores[t] += s.turnPts;
-  say(s, s.names[t] + ' banks ' + s.turnPts + ', now at ' + s.scores[t] + '.');
+  if (!canBank(s)) return;
+  if (selected(s).length) keep(s);
+  const t = s.turn, v = turnValue(s);
+  s.scores[t] += v;
+  say(s, s.names[t] + ' banks ' + v + ', now at ' + s.scores[t] + '.');
   if (s.scores[t] >= TARGET){ s.winner = t; s.phase = 'over'; s.note = ''; return; }
-  s.note = s.names[t] + ' banked ' + s.turnPts.toLocaleString('en-US') + '.';
+  s.note = s.names[t] + ' banked ' + v.toLocaleString('en-US') + '.';
   nextTurn(s);
 }
 export function forfeit(s, who){ s.winner = 1 - who; s.phase = 'over'; say(s, s.names[who] + ' gives up.'); }
@@ -82,7 +101,7 @@ export function botPick(s){
   return top;
 }
 export function botStops(s, pick){
-  const left = live(s).length - pick.pick.length, pts = s.turnPts + pick.s;
+  const left = live(s).length - pick.pick.length, pts = s.turnPts + bestSub(held(s).concat(pick.pick.map(i => s.dice[i].v)));
   if (s.scores[s.turn] + pts >= TARGET) return true;
   return left > 0 && ((left <= 2 && pts >= 300) || (left === 3 && pts >= 500) || pts >= 1000);
 }

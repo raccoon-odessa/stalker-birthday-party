@@ -26,6 +26,7 @@ const S = {players:{}, feed:[], games:[], party:{}, links:{}, ready:false,
 try { S.dismissed = new Set(JSON.parse(ls.get('zone-dismissed') || '[]')); } catch (e) {}
 const me = () => S.players[pid];
 const nameOf = p => (p && (p.name || '').trim()) || 'Stalker';
+const hostName = () => { const h = S.players.host, n = h && (h.name || '').trim(); return n && n !== 'Host' ? n : 'the host'; };
 const radio = text => DB.add('feed', {t:Date.now(), text}).catch(e => console.error(e));
 
 function starter(r){
@@ -41,6 +42,8 @@ function norm(p){
   p.inv = (p.inv || []).filter(i => i && G.ARTBY[i.a]);
   if (!Number.isFinite(p.coupons)) p.coupons = 0;
   if (typeof p.custom !== 'string' || p.custom.length !== G.N * G.N) p.custom = null;
+  if (typeof p.paint !== 'string' || p.paint.length !== G.N * G.N) p.paint = null;
+  if (!p.paint && p.custom) p.paint = G.paintFromCustom(p.custom, p.look);
   return p;
 }
 
@@ -107,6 +110,7 @@ function renderInvite(){
   const fact = (id, v) => { $(id).textContent = v || 'To be announced'; $(id).classList.toggle('todo', !v); };
   fact('factWhen', S.party.when); fact('factWhere', S.party.where);
   $('factNote').hidden = !S.party.note; $('factNote').textContent = S.party.note || '';
+  $('inviteLede').textContent = 'Make your stalker, collect artefacts and throw dice by the fire. The bar serves cocktails inspired by artefacts, and artefacts are how you pay for them. Win them in minigames and challenges, or buy them from ' + hostName() + ' for coupons.';
   $('rsvpYes').setAttribute('aria-pressed', me().rsvp === 'yes');
   $('rsvpNo').setAttribute('aria-pressed', me().rsvp === 'no');
 }
@@ -123,18 +127,17 @@ const GEAR = [
 function factionTag(node, f){ node.textContent = f.name; node.style.background = G.PAL[f.c]; node.style.color = f.ink; node.style.borderColor = G.PAL[f.c]; }
 const setLook = patch => savePlayer({look:Object.assign({}, me().look, patch)});
 function renderStalker(){
-  const p = me(), custom = !!p.custom;
+  const p = me(), custom = !!p.paint;
   $('maker').classList.toggle('painting', S.painting);
   $('hero').hidden = S.painting; $('paint').hidden = !S.painting;
-  $('wardrobe').hidden = S.painting || custom; $('locked').hidden = S.painting || !custom; $('paintbox').hidden = !S.painting;
-  $('stageActions').hidden = S.painting; $('btnShuffle').disabled = custom;
+  $('wardrobe').hidden = S.painting; $('locked').hidden = S.painting || !custom; $('paintbox').hidden = !S.painting;
+  $('stageActions').hidden = S.painting;
   $('makerTitle').textContent = S.painting ? 'Paint your stalker' : 'Your stalker';
   if (!custom) $('confirmDiscard').hidden = true;
   G.draw($('hero'), G.compose(p), true);
   $('plateName').textContent = nameOf(p);
   factionTag($('plateTag'), G.FACTIONS[p.look.faction]);
   if (S.painting){ renderPaint(); return; }
-  if (custom) return;
   const keep = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
   const tab = GEAR.find(t => t.id === S.gear);
   $('subtabs').replaceChildren(...GEAR.map(t => { const b = el('button', 'btn', t.label); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', t.id === S.gear); b.setAttribute('aria-pressed', t.id === S.gear); b.dataset.k = 'g' + t.id; b.addEventListener('click', () => { S.gear = t.id; renderStalker(); }); return b; }));
@@ -142,7 +145,7 @@ function renderStalker(){
   $('swGroup1').hidden = $('swGroup2').hidden = !tab.swatches;
   $('opts').replaceChildren(...(tab.options || []).map((o, i) => {
     const b = el('button', 'opt'); b.type = 'button'; b.setAttribute('aria-pressed', p.look[tab.key] === i); b.dataset.k = 'o' + i;
-    b.append(G.portrait({look:Object.assign({}, p.look, {[tab.key]:i})}), el('span', '', o.label));
+    b.append(G.portrait({look:Object.assign({}, p.look, {[tab.key]:i}), paint:p.paint}), el('span', '', o.label));
     if (o.note) b.append(el('small', '', o.note));
     b.addEventListener('click', () => setLook({[tab.key]:i}));
     return b;
@@ -161,13 +164,13 @@ function renderStalker(){
   if (keep){ const again = document.querySelector('[data-k="' + keep + '"]'); if (again) again.focus(); }
 }
 $('btnShuffle').addEventListener('click', () => savePlayer({look:G.randomLook(G.rng(Date.now()))}));
-const startPaint = () => { S.painting = true; S.undo = []; if (!me().custom) savePlayer({custom:G.toStr(G.compose(me()))}); else render(); };
+const startPaint = () => { S.painting = true; S.undo = []; render(); };
 $('btnPaint').addEventListener('click', startPaint);
 $('btnResume').addEventListener('click', startPaint);
 $('btnDone').addEventListener('click', () => { S.painting = false; render(); });
 $('btnDiscard').addEventListener('click', () => { $('confirmDiscard').hidden = false; });
 $('btnDiscardNo').addEventListener('click', () => { $('confirmDiscard').hidden = true; });
-$('btnDiscardYes').addEventListener('click', () => savePlayer({custom:null}));
+$('btnDiscardYes').addEventListener('click', () => savePlayer({paint:null, custom:null}));
 function renderPaint(){
   G.draw($('paint'), G.compose(me()), false);
   document.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === S.tool));
@@ -177,20 +180,21 @@ function renderPaint(){
 }
 document.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => { S.tool = b.dataset.tool; renderPaint(); }));
 $('btnMirror').addEventListener('click', () => { S.mirror = !S.mirror; renderPaint(); });
-$('btnUndo').addEventListener('click', () => { if (S.undo.length) savePlayer({custom:S.undo.pop()}); });
+$('btnUndo').addEventListener('click', () => { if (S.undo.length) savePlayer({paint:S.undo.pop(), custom:null}); });
 (() => {
-  const cv = $('paint'), N = G.N; let grid = null, last = null;
+  const cv = $('paint'), N = G.N; let ov = null, last = null;
   const cellAt = e => { const r = cv.getBoundingClientRect(); const f = v => Math.min(N - 1, Math.max(0, Math.floor(v * N))); return [f((e.clientX - r.left) / r.width), f((e.clientY - r.top) / r.height)]; };
-  const dab = (x, y) => { const v = S.tool === 'erase' ? -1 : S.color; grid[y * N + x] = v; if (S.mirror) grid[y * N + (N - 1 - x)] = v; };
+  const dab = (x, y) => { const v = S.tool === 'erase' ? '_' : G.CH[S.color]; ov[y * N + x] = v; if (S.mirror) ov[y * N + (N - 1 - x)] = v; };
+  const show = () => G.draw(cv, G.compose({look:me().look, paint:ov.join('')}), false);
   cv.addEventListener('pointerdown', e => {
     e.preventDefault(); const [x, y] = cellAt(e);
     if (S.tool === 'pick'){ const v = G.compose(me())[y * N + x]; if (v >= 0){ S.color = v; S.tool = 'brush'; renderPaint(); } return; }
     try { cv.setPointerCapture(e.pointerId); } catch (err) {}
-    S.undo.push(me().custom); if (S.undo.length > 60) S.undo.shift();
-    grid = G.compose(me()); last = [x, y]; dab(x, y); G.draw(cv, grid, false);
+    S.undo.push(me().paint); if (S.undo.length > 60) S.undo.shift();
+    ov = (me().paint || '.'.repeat(N * N)).split(''); last = [x, y]; dab(x, y); show();
   });
-  cv.addEventListener('pointermove', e => { if (!grid) return; const [x, y] = cellAt(e), [px, py] = last, n = Math.max(Math.abs(x - px), Math.abs(y - py)); for (let i = 1; i <= n; i++) dab(Math.round(px + (x - px) * i / n), Math.round(py + (y - py) * i / n)); last = [x, y]; G.draw(cv, grid, false); });
-  const end = () => { if (!grid) return; const s = G.toStr(grid); grid = null; savePlayer({custom:s}); };
+  cv.addEventListener('pointermove', e => { if (!ov) return; const [x, y] = cellAt(e), [px, py] = last, n = Math.max(Math.abs(x - px), Math.abs(y - py)); for (let i = 1; i <= n; i++) dab(Math.round(px + (x - px) * i / n), Math.round(py + (y - py) * i / n)); last = [x, y]; show(); });
+  const end = () => { if (!ov) return; const s = ov.join(''); ov = null; savePlayer({paint:/^\.+$/.test(s) ? null : s, custom:null}); };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
 })();
 
@@ -210,6 +214,7 @@ async function moveItem(from, to, itemId){
 function renderPack(){
   const p = me();
   $('wallet').textContent = fmt(p.coupons);
+  $('packNote').textContent = 'Artefacts pay for cocktails at the bar. Win more at dice and in challenges, or buy them from ' + hostName() + ' for coupons.';
   if (S.sel && !p.inv.find(i => i.id === S.sel)) S.sel = null;
   if (!S.sel && p.inv.length) S.sel = p.inv[0].id;
   const cells = p.inv.map(it => {
@@ -310,7 +315,7 @@ async function botRun(){
   while (S.local === meta && meta.s.turn === 1 && meta.s.phase !== 'over'){
     await sleep(750); if (S.local !== meta) return;
     if (meta.s.phase === 'start'){ D.roll(meta.s); renderDice(); continue; }
-    const pick = D.botPick(meta.s); pick.pick.forEach(i => meta.s.dice[i].sel = true); renderDice();
+    const pick = D.botPick(meta.s); if (!pick){ D.bank(meta.s); renderDice(); continue; } pick.pick.forEach(i => meta.s.dice[i].sel = true); renderDice();
     await sleep(850); if (S.local !== meta) return;
     if (D.botStops(meta.s, pick)) D.bank(meta.s); else D.throwOn(meta.s);
     renderDice();
@@ -435,18 +440,19 @@ function renderDice(){
     if (s.note && s.phase === 'start') t = s.note + ' ' + t + '.';
     st.textContent = t; st.className = 'status' + (s.note && /nothing/.test(s.note) && s.phase === 'start' ? ' bad' : '');
   }
-  const sel = D.selected(s), sc = D.selScore(s);
-  $('turnPts').textContent = fmt(s.turnPts);
-  $('selPts').textContent = sel.length ? (sc > 0 ? fmt(sc) : 'not valid') : '0';
+  const sel = D.selected(s), proj = D.projected(s);
+  $('turnPts').textContent = fmt(s.phase === 'over' ? 0 : D.turnValue(s));
+  $('selPts').textContent = s.phase === 'choose' ? fmt(proj) : '0';
   $('diceLeft').textContent = s.phase === 'start' ? 6 : D.live(s).length;
   const liveDice = s.phase === 'start' || s.phase === 'over' ? [] : s.dice.map((d, i) => [d, i]).filter(([d]) => !d.used);
   $('throw').replaceChildren(...(liveDice.length ? liveDice.map(([d, i]) => dieNode(d, i, false, act0)) : [el('span', 'note', s.phase === 'over' ? 'Game over.' : 'Dice are in the cup.')]));
   const kept = s.dice.filter(d => d.used);
-  $('kept').replaceChildren(...(kept.length && s.phase !== 'over' ? kept.map((d, i) => dieNode(d, i, true, false)) : [el('span', 'note', 'Nothing kept yet.')]));
-  $('btnThrow').disabled = !act0 || (s.phase === 'choose' && !(sc > 0));
-  $('btnThrow').textContent = s.phase === 'choose' && sc > 0 ? 'Keep & throw ' + (D.live(s).length - sel.length || 6) : 'Throw';
-  $('btnBank').disabled = !act0 || s.phase !== 'choose' || !(sc > 0);
-  $('btnBank').textContent = s.phase === 'choose' && sc > 0 ? 'Keep & pass (+' + fmt(s.turnPts + sc) + ')' : 'Keep & pass';
+  $('kept').replaceChildren(...(kept.length && s.phase !== 'over' ? kept.map((d, i) => dieNode(d, i, true, false)) : [el('span', 'note', 'Nothing set aside yet.')]));
+  const canThrow = D.canThrowOn(s), left = D.live(s).length - sel.length;
+  $('btnThrow').disabled = !act0 || !canThrow;
+  $('btnThrow').textContent = s.phase === 'choose' && sel.length ? 'Set aside & throw ' + (left || 6) : 'Throw';
+  $('btnBank').disabled = !act0 || !D.canBank(s);
+  $('btnBank').textContent = s.phase === 'choose' && proj > 0 ? 'Bank ' + fmt(proj) : 'Bank';
   const over = s.phase === 'over';
   $('btnQuit').textContent = over ? 'Back to the fire' : (v.kind === 'local' && v.meta.mode === 'bot' ? 'Stop practice' : 'Give up');
   $('btnQuit').disabled = over && v.kind === 'live' && v.meta.status !== 'over';

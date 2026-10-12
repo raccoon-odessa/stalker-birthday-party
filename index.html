@@ -252,11 +252,10 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
       <div class="msg">
         <p class="eyebrow">Incoming PDA message</p>
         <h1 id="greet">Stalker, you're invited to a birthday in the Zone</h1>
-        <p class="lede">Make your stalker, carry a few artefacts and win coupons at dice by the fire. The bar serves cocktails inspired by anomalies, and you pay for them in coupons.</p>
+        <p class="lede" id="inviteLede">Make your stalker, collect artefacts and throw dice by the fire. The bar serves cocktails inspired by artefacts, and artefacts are how you pay for them. Win them in minigames and challenges, or buy them from the host for coupons.</p>
         <dl class="facts">
           <div><dt>When</dt><dd id="factWhen" class="todo">To be announced</dd></div>
           <div><dt>Where</dt><dd id="factWhere" class="todo">To be announced</dd></div>
-          <div><dt>Bring</dt><dd>Nothing. Drinks are earned.</dd></div>
         </dl>
         <p id="factNote" class="lede" hidden></p>
         <div class="field">
@@ -270,7 +269,7 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
       </div>
       <ol class="steps">
         <li><div><b>Make your stalker</b><span>Helmet, suit and faction.</span></div><button class="btn" type="button" data-go="stalker">Open</button></li>
-        <li><div><b>Check your backpack</b><span>You start with artefacts and coupons.</span></div><button class="btn" type="button" data-go="pack">Open</button></li>
+        <li><div><b>Check your backpack</b><span>Your artefacts are what the bar takes.</span></div><button class="btn" type="button" data-go="pack">Open</button></li>
         <li><div><b>Throw dice</b><span>Bet coupons or artefacts against other stalkers.</span></div><button class="btn" type="button" data-go="dice">Open</button></li>
       </ol>
     </div>
@@ -303,18 +302,18 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
           <div class="field" id="swGroup2"><span class="label">Hair colour</span><div class="swatches" id="sw2"></div></div>
         </div>
         <div class="panel" id="locked" hidden>
-          <p>This stalker has hand-painted pixels, so the gear picker is paused.</p>
+          <p>Your painted pixels sit on top of the gear, so you can still swap helmets and suits.</p>
           <div class="row">
-            <button class="btn primary" type="button" id="btnResume">Keep painting</button>
-            <button class="btn" type="button" id="btnDiscard">Back to gear</button>
+            <button class="btn" type="button" id="btnResume">Edit pixels</button>
+            <button class="btn" type="button" id="btnDiscard">Remove painted pixels</button>
           </div>
           <div id="confirmDiscard" hidden class="tab" style="gap:10px">
-            <p style="color:var(--danger)">Going back throws away the painted pixels.</p>
-            <div class="row"><button class="btn danger" type="button" id="btnDiscardYes">Throw them away</button><button class="btn" type="button" id="btnDiscardNo">Keep them</button></div>
+            <p style="color:var(--danger)">Remove all your painted pixels?</p>
+            <div class="row"><button class="btn danger" type="button" id="btnDiscardYes">Remove them</button><button class="btn" type="button" id="btnDiscardNo">Keep them</button></div>
           </div>
         </div>
         <div class="panel" id="paintbox" hidden>
-          <p>Tap or drag on the grid to recolour pixels. Mirror paints both halves at once.</p>
+          <p>Tap or drag to paint over your gear. The eraser cuts pixels out. Your paint stays when you change gear later.</p>
           <div class="row" role="group" aria-label="Tool">
             <button class="btn" type="button" data-tool="brush" aria-pressed="true">Brush</button>
             <button class="btn" type="button" data-tool="erase" aria-pressed="false">Eraser</button>
@@ -335,7 +334,7 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
       <div class="panel">
         <header><h2>Backpack</h2><div class="wallet"><span class="mono" id="wallet">0</span><span class="muted">coupons</span></div></header>
         <div class="grid" id="packGrid"></div>
-        <p class="note">Artefacts are from S.T.A.L.K.E.R. 2. Win more at dice, or give them to other stalkers.</p>
+        <p class="note" id="packNote">Artefacts pay for cocktails at the bar. Win more at dice and in challenges, or buy them from the host for coupons.</p>
       </div>
       <div class="panel detail" id="detail"></div>
     </div>
@@ -368,12 +367,12 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
         <div class="panel" id="table" hidden>
           <div class="score" id="score"></div>
           <p class="status" id="status" aria-live="polite"></p>
-          <div class="turnline"><span>Turn <b id="turnPts">0</b></span><span>Selected <b id="selPts">0</b></span><span>Dice left <b id="diceLeft">6</b></span></div>
+          <div class="turnline"><span>Turn <b id="turnPts">0</b></span><span>If banked now <b id="selPts">0</b></span><span>Dice left <b id="diceLeft">6</b></span></div>
           <div class="tray" id="throw" aria-label="Current throw"></div>
-          <div class="field"><span class="label">Kept this turn</span><div class="tray kept" id="kept"></div></div>
+          <div class="field"><span class="label">Set aside this turn</span><div class="tray kept" id="kept"></div></div>
           <div class="row">
             <button class="btn primary" type="button" id="btnThrow">Throw</button>
-            <button class="btn" type="button" id="btnBank">Keep &amp; pass</button>
+            <button class="btn" type="button" id="btnBank">Bank</button>
             <button class="btn" type="button" id="btnQuit">Give up</button>
           </div>
           <div class="row" id="quitConfirm" hidden><span style="color:var(--danger)" id="quitText">Give up? Your opponent wins the pot.</span><button class="btn danger" type="button" id="btnQuitYes">Give up</button><button class="btn" type="button" id="btnQuitNo">Keep playing</button></div>
@@ -387,7 +386,7 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
         <div class="panel">
           <details class="rules">
             <summary>Scoring</summary>
-            <p class="note" style="margin-top:8px">Throw six dice. Set aside at least one scoring die, then throw the rest again or keep your points. A throw with nothing scoring loses the turn's points. Use all six and you throw all six again.</p>
+            <p class="note" style="margin-top:8px">Throw six dice and set aside at least one. You may set aside dice that don't score yet, to build towards a straight or three of a kind. Then throw the rest again, or bank what your set-aside dice are worth. A throw that doesn't raise that value is a bust and the turn's points are lost. If all six set-aside dice score, you bank them into the turn and throw all six again.</p>
             <table>
               <tr><td>Single 1</td><td>100</td></tr>
               <tr><td>Single 5</td><td>50</td></tr>

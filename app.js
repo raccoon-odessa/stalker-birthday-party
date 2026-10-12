@@ -1,6 +1,6 @@
-import * as G from './gear.js?v=4';
-import * as D from './dice.js?v=4';
-import { HOST_HASH } from './config.js?v=4';
+import * as G from './gear.js?v=5';
+import * as D from './dice.js?v=5';
+import { HOST_HASH } from './config.js?v=5';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=4' : './db-firebase.js?v=4'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=5' : './db-firebase.js?v=5'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -567,7 +567,7 @@ $('btnAddGuest').addEventListener('click', async () => {
 /* ---------- background sound: psy-radiation ambience ---------- */
 const AMB = {el:null, on:ls.get('zone-sound') !== 'off'};
 function ambience(){
-  if (!AMB.el){ const au = new Audio('audio/psy-radiation.mp3?v=2'); au.loop = true; au.preload = 'auto'; au.volume = 1; au.setAttribute('playsinline', ''); AMB.el = au; }
+  if (!AMB.el){ const au = new Audio('audio/psy-radiation.mp3?v=3'); au.loop = true; au.preload = 'auto'; au.volume = 1; au.setAttribute('playsinline', ''); AMB.el = au; }
   return AMB.el;
 }
 function playAmbience(){ if (!AMB.on) return; const p = ambience().play(); if (p && p.catch) p.catch(e => console.warn('sound waiting for a tap', e)); }

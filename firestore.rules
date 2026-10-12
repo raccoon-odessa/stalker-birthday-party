@@ -1,0 +1,13 @@
+rules_version = '2';
+// Paste into Firebase console -> Firestore Database -> Rules, then Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /players/{pid} { allow read, write: if true; }
+    match /games/{gid}   { allow read, write: if true; }
+    match /config/{cid}  { allow read, write: if true; }
+    match /links/{pid}   { allow read, write: if true; }
+    match /feed/{fid}    { allow read, create: if request.resource.data.keys().hasOnly(['t', 'text']); }
+    // Personal link codes: can be looked up one at a time, never listed.
+    match /keys/{token}  { allow get, create: if true; }
+  }
+}

@@ -107,8 +107,18 @@ const FACTIONS = [
   {name:'Noon', c:51, ink:'#fff', line:'Strider’s veterans on Wild Island.'},
   {name:'Mercenaries', c:50, ink:'#0e100d', line:'Work for whoever pays.'},
   {name:'Bandits', c:31, ink:'#fff', line:'Easy money and quick hands.'},
-  {name:'Ecologists', c:28, ink:'#17130a', line:'Study the Zone and pay well for artefacts.'}
+  {name:'Ecologists', c:28, ink:'#17130a', line:'Study the Zone and pay well for artefacts.'},
+  {name:'Clear Sky', era:1, c:23, ink:'#0e100d', line:'Swamp researchers in sky-blue camo who tried to understand the Zone.'},
+  {name:'Ukrainian Military', era:1, c:9, ink:'#fff', line:'Held the perimeter, and the checkpoints took bribes.'},
+  {name:'SBU', era:1, c:20, ink:'#fff', line:'Ukraine\u2019s security service. Major Degtyarev went in undercover.'},
+  {name:'Renegades', era:1, c:12, ink:'#fff', line:'Swamp outcasts at war with Clear Sky.'},
+  {name:'MSOP', era:0, c:61, ink:'#fff', line:'Joint military forces guarding the Zone\u2019s restricted sites.'},
+  {name:'SIRCAA', era:0, c:60, ink:'#0e100d', line:'The state research institute run by Dr. Dalin.'},
+  {name:'Corps', era:0, c:36, ink:'#0e100d', line:'A little-known group whose patches turn up in the Zone.'},
+  {name:'Zombified', era:0, c:4, ink:'#fff', line:'Stalkers whose minds the Zone burned out.'},
+  {name:'Sin', era:2, c:24, ink:'#fff', line:'A cult of hooded \u201cdark stalkers\u201d, cut from Shadow of Chernobyl.'}
 ];
+const FACTION_ERAS = ['In S.T.A.L.K.E.R. 2', 'From the earlier games', 'Cut from the games'];
 
 /* ---------- artefacts (from the S.T.A.L.K.E.R. 2 artifact list) ---------- */
 const TYPES = {
@@ -258,4 +268,4 @@ const rarColor = r => ['var(--r0)','var(--r1)','var(--r2)','var(--r3)'][r];
 function randomLook(r){ const pick = n => Math.floor(r() * n); return {skin:pick(SKINS.length), hairC:pick(HAIRS.length), face:pick(FACES.length), helmet:pick(HELMETS.length), suit:pick(SUITS.length), faction:pick(FACTIONS.length)}; }
 function randomArt(r, maxR){ const pool = ART.filter(a => a.r <= maxR); const w = pool.map(a => [8,4,2,1][a.r]); let t = r() * w.reduce((s, v) => s + v, 0); for (let i = 0; i < pool.length; i++){ t -= w[i]; if (t <= 0) return pool[i].name; } return pool[0].name; }
 function fixLook(L){ L = Object.assign({}, L || {}); const lim = (k, n) => { if (!(Number.isInteger(L[k]) && L[k] >= 0 && L[k] < n)) L[k] = 0; }; lim('skin',SKINS.length); lim('hairC',HAIRS.length); lim('face',FACES.length); lim('helmet',HELMETS.length); lim('suit',SUITS.length); lim('faction',FACTIONS.length); return L; }
-export { SUIT_GROUPS, paintFromCustom, N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };
+export { FACTION_ERAS, SUIT_GROUPS, paintFromCustom, N, PAL, CH, SKINS, HAIRS, SUITS, HELMETS, FACES, FACTIONS, TYPES, RAR, ART, ARTBY, rng, hash, uid, compose, toStr, draw, portrait, artIcon, rarColor, randomLook, randomArt, fixLook };

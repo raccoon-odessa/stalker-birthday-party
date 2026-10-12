@@ -1,6 +1,6 @@
-import * as G from './gear.js?v=5';
-import * as D from './dice.js?v=5';
-import { HOST_HASH } from './config.js?v=5';
+import * as G from './gear.js?v=6';
+import * as D from './dice.js?v=6';
+import { HOST_HASH } from './config.js?v=6';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=5' : './db-firebase.js?v=5'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=6' : './db-firebase.js?v=6'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -152,13 +152,16 @@ function renderStalker(){
   });
   if (tab.groups) $('opts').replaceChildren(...tab.groups.flatMap(gr => [el('h3', 'opt-group', gr)].concat(optNodes.filter((n, i) => tab.options[i].group === gr))));
   else $('opts').replaceChildren(...optNodes);
-  if (tab.id === 'faction') $('factions').replaceChildren(...G.FACTIONS.map((f, i) => {
-    const b = el('button', 'faction'); b.type = 'button'; b.setAttribute('aria-pressed', p.look.faction === i); b.dataset.k = 'f' + i;
-    const chip = el('i'); chip.style.background = G.PAL[f.c];
-    b.append(chip, el('b', '', f.name), el('span', '', f.line));
-    b.addEventListener('click', () => setLook({faction:i}));
-    return b;
-  }));
+  if (tab.id === 'faction'){
+    const nodes = G.FACTIONS.map((f, i) => {
+      const b = el('button', 'faction'); b.type = 'button'; b.setAttribute('aria-pressed', p.look.faction === i); b.dataset.k = 'f' + i;
+      const chip = el('i'); chip.style.background = G.PAL[f.c];
+      b.append(chip, el('b', '', f.name), el('span', '', f.line));
+      b.addEventListener('click', () => setLook({faction:i}));
+      return b;
+    });
+    $('factions').replaceChildren(...G.FACTION_ERAS.flatMap((era, k) => [el('h3', 'opt-group', era)].concat(nodes.filter((n, i) => (G.FACTIONS[i].era || 0) === k))));
+  }
   if (tab.swatches){
     const sw = (list, key, box) => $(box).replaceChildren(...list.map((c, i) => { const b = el('button', 'sw'); b.type = 'button'; b.style.background = G.PAL[c]; b.setAttribute('aria-pressed', p.look[key] === i); b.setAttribute('aria-label', (key === 'skin' ? 'Skin tone ' : 'Hair colour ') + (i + 1)); b.dataset.k = key + i; b.addEventListener('click', () => setLook({[key]:i})); return b; }));
     sw(G.SKINS, 'skin', 'sw1'); sw(G.HAIRS, 'hairC', 'sw2');

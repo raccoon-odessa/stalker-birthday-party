@@ -115,10 +115,9 @@ const FACTIONS = [
   {name:'MSOP', era:0, c:61, ink:'#fff', line:'Joint military forces guarding the Zone\u2019s restricted sites.'},
   {name:'SIRCAA', era:0, c:60, ink:'#0e100d', line:'The state research institute run by Dr. Dalin.'},
   {name:'Corps', era:0, c:36, ink:'#0e100d', line:'A little-known group whose patches turn up in the Zone.'},
-  {name:'Zombified', era:0, c:4, ink:'#fff', line:'Stalkers whose minds the Zone burned out.'},
-  {name:'Sin', era:2, c:24, ink:'#fff', line:'A cult of hooded \u201cdark stalkers\u201d, cut from Shadow of Chernobyl.'}
+  {name:'Zombified', era:0, c:4, ink:'#fff', line:'Stalkers whose minds the Zone burned out.'}
 ];
-const FACTION_ERAS = ['In S.T.A.L.K.E.R. 2', 'From the earlier games', 'Cut from the games'];
+const FACTION_ERAS = ['In S.T.A.L.K.E.R. 2', 'From the earlier games'];
 
 /* ---------- artefacts (from the S.T.A.L.K.E.R. 2 artifact list) ---------- */
 const TYPES = {

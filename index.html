@@ -204,6 +204,8 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 .emission{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(160,20,10,.85),rgba(20,4,2,.97) 70%);color:#fff;text-align:center}
 .emission.blow{background:radial-gradient(circle at 50% 40%,rgba(255,60,20,.95),rgba(90,0,0,.98) 70%);animation:emiPulse 1s ease-in-out infinite}
 @keyframes emiPulse{50%{filter:brightness(1.35)}}
+.emission.flash{background:#d6ecff!important;color:#0b1a2a;animation:none}
+.emission.flash .emi-count,.emission.flash .eyebrow{color:#0b1a2a}
 .emi-in{display:flex;flex-direction:column;gap:14px;align-items:center;max-width:36rem}
 .emission h1{font-size:clamp(2.4rem,10vw,5rem);letter-spacing:.06em}
 .emission .eyebrow{color:#ffcf6a}
@@ -489,6 +491,6 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="app.js?v=7"></script>
+<script type="module" src="app.js?v=8"></script>
 </body>
 </html>

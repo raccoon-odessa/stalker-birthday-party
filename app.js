@@ -1,6 +1,6 @@
-import * as G from './gear.js?v=7';
-import * as D from './dice.js?v=7';
-import { HOST_HASH } from './config.js?v=7';
+import * as G from './gear.js?v=8';
+import * as D from './dice.js?v=8';
+import { HOST_HASH } from './config.js?v=8';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=7' : './db-firebase.js?v=7'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=8' : './db-firebase.js?v=8'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -578,29 +578,90 @@ const emiPhase = (e, now) => {
   return t < 0 ? 'calm' : t < w ? 'warning' : t < w + d ? 'blowout' : 'calm';
 };
 let emiShownFor = null, emiHidden = null, emiLastPhase = 'calm';
-const SFX = {ctx:null, nodes:[]};
+// Lightning times inside the blowout (ms after it starts). The lamp program on the PC
+// computes the same times from the emission id, so screens, thunder and lamp flash together.
+function strikes(id, durMs){
+  let s = 0; for (const ch of String(id)) s = (Math.imul(s, 31) + ch.charCodeAt(0)) >>> 0;
+  const out = []; let t = 600;
+  while (t < durMs - 500){ out.push(t); s = (Math.imul(s, 1664525) + 1013904223) >>> 0; t += 5000 + (s / 4294967296) * 5000; }
+  return out;
+}
+const SFX = {ctx:null, bus:null, white:null, brown:null, storm:null, timers:[], plannedFor:null};
 ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { try { if (!SFX.ctx){ const C = window.AudioContext || window.webkitAudioContext; if (C) SFX.ctx = new C(); } else if (SFX.ctx.state === 'suspended') SFX.ctx.resume(); } catch (e) {} }, {passive:true}));
-function sirenStop(){ SFX.nodes.forEach(n => { try { n.stop(); } catch (e) {} }); SFX.nodes = []; }
-function siren(kind){
-  sirenStop(); const ctx = SFX.ctx; if (!ctx) return;
-  const g = ctx.createGain(); g.gain.value = kind === 'blowout' ? 0.22 : 0.16; g.connect(ctx.destination);
-  const o = ctx.createOscillator(); o.type = 'sawtooth';
-  const lfo = ctx.createOscillator(), lg = ctx.createGain();
-  lfo.frequency.value = kind === 'blowout' ? 0.9 : 0.35; lg.gain.value = kind === 'blowout' ? 260 : 220;
-  o.frequency.value = kind === 'blowout' ? 420 : 560; lfo.connect(lg).connect(o.frequency);
-  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
-  o.connect(f).connect(g); o.start(); lfo.start(); SFX.nodes.push(o, lfo);
-  if (kind === 'blowout'){ const r = ctx.createOscillator(), rg = ctx.createGain(); r.type = 'sine'; r.frequency.value = 42; rg.gain.value = 0.5; r.connect(rg).connect(ctx.destination); r.start(); SFX.nodes.push(r); }
+function sfxInit(){
+  const ctx = SFX.ctx; if (!ctx) return null;
+  if (!SFX.bus){
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 6;
+    SFX.bus = ctx.createGain(); SFX.bus.gain.value = 1; SFX.bus.connect(comp).connect(ctx.destination);
+    const len = ctx.sampleRate * 4;
+    SFX.white = ctx.createBuffer(1, len, ctx.sampleRate); SFX.brown = ctx.createBuffer(1, len, ctx.sampleRate);
+    const w = SFX.white.getChannelData(0), b = SFX.brown.getChannelData(0); let last = 0;
+    for (let i = 0; i < len; i++){ const r = Math.random() * 2 - 1; w[i] = r; last = (last + 0.02 * r) / 1.02; b[i] = last * 3.5; }
+  }
+  return ctx;
+}
+const src = (ctx, buf, loop) => { const s = ctx.createBufferSource(); s.buffer = buf; s.loop = !!loop; return s; };
+function stormLevel(level){
+  const ctx = sfxInit(); if (!ctx) return;
+  if (!SFX.storm){
+    const wind = src(ctx, SFX.brown, true), wf = ctx.createBiquadFilter(), wg = ctx.createGain();
+    wf.type = 'bandpass'; wf.frequency.value = 320; wf.Q.value = 0.6; wg.gain.value = 0;
+    const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 160; lfo.connect(lg).connect(wf.frequency);
+    const rain = src(ctx, SFX.white, true), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
+    rf.type = 'highpass'; rf.frequency.value = 2500; rg.gain.value = 0;
+    wind.connect(wf).connect(wg).connect(SFX.bus); rain.connect(rf).connect(rg).connect(SFX.bus);
+    wind.start(); rain.start(); lfo.start();
+    SFX.storm = {wg, rg, nodes:[wind, rain, lfo]};
+  }
+  const t = ctx.currentTime;
+  SFX.storm.wg.gain.setTargetAtTime(0.9 * level, t, level ? 1.2 : 1.5);
+  SFX.storm.rg.gain.setTargetAtTime(0.07 * level, t, level ? 1.2 : 1.5);
+  if (!level){ const st = SFX.storm; SFX.storm = null; setTimeout(() => st.nodes.forEach(n => { try { n.stop(); } catch (e) {} }), 6000); }
+}
+function thunder(power){
+  const ctx = sfxInit(); if (!ctx) return; const t = ctx.currentTime;
+  if (power > 0.6){
+    const c = src(ctx, SFX.white), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+    cf.type = 'lowpass'; cf.frequency.setValueAtTime(5000, t); cf.frequency.exponentialRampToValueAtTime(250, t + 0.5);
+    cg.gain.setValueAtTime(0, t); cg.gain.linearRampToValueAtTime(1.1 * power, t + 0.008); cg.gain.exponentialRampToValueAtTime(0.25 * power, t + 0.35); cg.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    c.connect(cf).connect(cg).connect(SFX.bus); c.start(t, Math.random() * 2); c.stop(t + 1.6);
+  }
+  const r = src(ctx, SFX.brown), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
+  rf.type = 'lowpass'; rf.frequency.value = power > 0.6 ? 220 : 140;
+  const dly = power > 0.6 ? 0.05 : 0.2, len = 3 + Math.random() * 2;
+  rg.gain.setValueAtTime(0, t); rg.gain.linearRampToValueAtTime(1.6 * power, t + dly + 0.25);
+  for (let k = 1; k < 7; k++) rg.gain.linearRampToValueAtTime(1.6 * power * (1 - k / 7) * (0.55 + Math.random() * 0.45), t + dly + 0.25 + k * len / 7);
+  rg.gain.linearRampToValueAtTime(0, t + dly + 0.3 + len);
+  r.connect(rf).connect(rg).connect(SFX.bus); r.start(t, Math.random() * 2); r.stop(t + len + 1);
+}
+function flashScreen(){
+  const box = $('emission'); if (box.hidden || reduced()) return;
+  box.classList.add('flash'); setTimeout(() => box.classList.remove('flash'), 110);
+  setTimeout(() => { box.classList.add('flash'); setTimeout(() => box.classList.remove('flash'), 80); }, 200);
+}
+function clearPlan(){ SFX.timers.forEach(clearTimeout); SFX.timers = []; SFX.plannedFor = null; }
+function planWarning(e){
+  clearPlan(); SFX.plannedFor = e.id + 'w';
+  const end = e.start + (e.warn || 45) * 1000;
+  const next = () => { const wait = 4000 + Math.random() * 6000; if (Date.now() + wait > end) return; SFX.timers.push(setTimeout(() => { thunder(0.35); next(); }, wait)); };
+  next();
+}
+function planBlowout(e){
+  clearPlan(); SFX.plannedFor = e.id + 'b';
+  const begin = e.start + (e.warn || 45) * 1000, now = Date.now();
+  strikes(e.id, (e.dur || 30) * 1000).forEach(ms => { const at = begin + ms; if (at > now) SFX.timers.push(setTimeout(() => { flashScreen(); thunder(1); }, at - now)); });
 }
 function emiTick(){
   const e = S.emi, now = Date.now(), ph = emiPhase(e, now), box = $('emission');
   if (ph !== emiLastPhase){
-    if (ph === 'warning'){ siren('warning'); try { navigator.vibrate && navigator.vibrate([600, 300, 600, 300, 600]); } catch (x) {} }
-    else if (ph === 'blowout'){ siren('blowout'); try { navigator.vibrate && navigator.vibrate([1000, 200, 1000, 200, 1000]); } catch (x) {} }
-    else sirenStop();
+    if (ph === 'warning'){ stormLevel(0.3); try { navigator.vibrate && navigator.vibrate([400, 200, 400]); } catch (x) {} }
+    else if (ph === 'blowout'){ stormLevel(1); try { navigator.vibrate && navigator.vibrate([1200, 300, 1200]); } catch (x) {} }
+    else { stormLevel(0); clearPlan(); }
     if (emiLastPhase === 'blowout' && ph === 'calm' && S.ready) toast('The emission has passed.');
     emiLastPhase = ph;
   }
+  if (ph === 'warning' && SFX.plannedFor !== e.id + 'w') planWarning(e);
+  if (ph === 'blowout' && SFX.plannedFor !== e.id + 'b') planBlowout(e);
   if (ph === 'calm' || emiHidden === e.id + ph){ box.hidden = true; if (S.ready && S.tab === 'host') renderEmiStatus(); return; }
   box.hidden = false; box.classList.toggle('blow', ph === 'blowout'); $('emiStopHost').hidden = !isHost;
   const w = (e.warn || 45) * 1000, d = (e.dur || 30) * 1000;

@@ -1,6 +1,6 @@
-import * as G from './gear.js?v=8';
-import * as D from './dice.js?v=8';
-import { HOST_HASH } from './config.js?v=8';
+import * as G from './gear.js?v=9';
+import * as D from './dice.js?v=9';
+import { HOST_HASH } from './config.js?v=9';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=8' : './db-firebase.js?v=8'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=9' : './db-firebase.js?v=9'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -676,7 +676,7 @@ setInterval(emiTick, 250);
 $('emiStopHost').addEventListener('click', () => DB.set('config/emission', Object.assign({}, S.emi, {stopped:true})));
 $('emiHide').addEventListener('click', () => { emiHidden = (S.emi.id || '') + emiPhase(S.emi, Date.now()); emiTick(); });
 const emiNum = (id, lo, hi, def) => { const v = Math.round(+$(id).value); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def; };
-function nextRandom(e, from){ const lo = (e.minMin || 30), hi = Math.max(lo, e.maxMin || 60); return from + ((e.warn || 45) + (e.dur || 30)) * 1000 + (lo + Math.random() * (hi - lo)) * 60000; }
+function nextRandom(e, from){ const lo = (e.minMin || 40), hi = Math.max(lo, e.maxMin || 120); return from + ((e.warn || 45) + (e.dur || 30)) * 1000 + (lo + Math.random() * (hi - lo)) * 60000; }
 async function startEmission(){
   const warn = emiNum('emiWarn', 10, 180, 45), dur = emiNum('emiDur', 10, 180, 30), now = Date.now();
   const e = Object.assign({}, S.emi, {id:G.uid(), start:now, warn, dur, stopped:false});
@@ -727,12 +727,12 @@ function renderEmiHost(){
 $('btnEmiNow').addEventListener('click', () => startEmission().catch(() => toast('Could not start it. Check the connection.')));
 $('btnEmiStop').addEventListener('click', () => DB.set('config/emission', Object.assign({}, S.emi, {stopped:true})));
 $('btnEmiAuto').addEventListener('click', () => {
-  const minMin = emiNum('emiMin', 5, 240, 30), maxMin = Math.max(minMin, emiNum('emiMax', 5, 240, 60));
+  const minMin = emiNum('emiMin', 5, 240, 40), maxMin = Math.max(minMin, emiNum('emiMax', 5, 240, 120));
   const e = Object.assign({warn:emiNum('emiWarn', 10, 180, 45), dur:emiNum('emiDur', 10, 180, 30)}, S.emi, {minMin, maxMin});
   e.auto = !S.emi.auto; e.nextAt = e.auto ? nextRandom(e, Date.now()) : null;
   DB.set('config/emission', e).then(() => toast(e.auto ? 'Random emissions are on.' : 'Random emissions are off.'));
 });
-['emiMin', 'emiMax', 'emiWarn', 'emiDur'].forEach(id => $(id).addEventListener('change', () => { if (!S.emi.id && !S.emi.auto) return; const minMin = emiNum('emiMin', 5, 240, 30); DB.set('config/emission', Object.assign({}, S.emi, {minMin, maxMin:Math.max(minMin, emiNum('emiMax', 5, 240, 60)), warn:emiNum('emiWarn', 10, 180, 45), dur:emiNum('emiDur', 10, 180, 30)})); }));
+['emiMin', 'emiMax', 'emiWarn', 'emiDur'].forEach(id => $(id).addEventListener('change', () => { if (!S.emi.id && !S.emi.auto) return; const minMin = emiNum('emiMin', 5, 240, 40); DB.set('config/emission', Object.assign({}, S.emi, {minMin, maxMin:Math.max(minMin, emiNum('emiMax', 5, 240, 120)), warn:emiNum('emiWarn', 10, 180, 45), dur:emiNum('emiDur', 10, 180, 30)})); }));
 
 /* ---------- background sound: psy-radiation ambience ---------- */
 const AMB = {el:null, on:ls.get('zone-sound') !== 'off'};

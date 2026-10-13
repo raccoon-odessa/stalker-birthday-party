@@ -201,6 +201,17 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 @media (prefers-reduced-motion:reduce){.die{transition:none}}
 
 [hidden]{display:none!important}
+.emission{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(160,20,10,.85),rgba(20,4,2,.97) 70%);color:#fff;text-align:center}
+.emission.blow{background:radial-gradient(circle at 50% 40%,rgba(255,60,20,.95),rgba(90,0,0,.98) 70%);animation:emiPulse 1s ease-in-out infinite}
+@keyframes emiPulse{50%{filter:brightness(1.35)}}
+.emi-in{display:flex;flex-direction:column;gap:14px;align-items:center;max-width:36rem}
+.emission h1{font-size:clamp(2.4rem,10vw,5rem);letter-spacing:.06em}
+.emission .eyebrow{color:#ffcf6a}
+.emi-sub{font-size:1.2rem}
+.emi-count{font-size:clamp(3rem,14vw,6rem);line-height:1;color:#ffcf6a}
+.emission .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+@media (prefers-reduced-motion:reduce){.emission.blow{animation:none}}
+.emi-panel{border-color:var(--danger)}
 .bar-top{gap:10px}
 .sound{margin-left:auto;background:transparent;border:1px solid var(--line-hi);color:var(--muted);font-family:var(--mono);font-size:.8rem;padding:5px 9px;cursor:pointer;white-space:nowrap}
 .sound[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
@@ -427,6 +438,23 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 
   <!-- HOST -->
   <section class="tab" id="tab-host" role="tabpanel" hidden>
+    <div class="panel emi-panel">
+      <header><h2>Emission</h2><span class="note" id="emiStatus">Calm</span></header>
+      <p class="note">Every open phone and screen gets the siren and a red warning, and the lamp turns red if the lamp program is running on your PC. Stalkers have the warning time to reach shelter.</p>
+      <div class="row" style="align-items:flex-end">
+        <div class="field"><label for="emiWarn">Warning (seconds)</label><input id="emiWarn" type="number" min="10" max="180" value="45" style="width:7rem"></div>
+        <div class="field"><label for="emiDur">Blowout (seconds)</label><input id="emiDur" type="number" min="10" max="180" value="30" style="width:7rem"></div>
+        <button class="btn primary" type="button" id="btnEmiNow">Start emission now</button>
+        <button class="btn danger" type="button" id="btnEmiStop" hidden>Stop it</button>
+      </div>
+      <div class="row" style="align-items:flex-end">
+        <button class="btn" type="button" id="btnEmiAuto" aria-pressed="false">Random emissions: off</button>
+        <div class="field"><label for="emiMin">Every (min)</label><input id="emiMin" type="number" min="5" max="240" value="30" style="width:6rem"></div>
+        <div class="field"><label for="emiMax">to (min)</label><input id="emiMax" type="number" min="5" max="240" value="60" style="width:6rem"></div>
+        <span class="note" id="emiNext"></span>
+      </div>
+      <div class="field"><span class="label">Caught outside? Take a random artefact</span><div class="row" id="emiCaught"></div></div>
+    </div>
     <div class="panel">
       <header><h2>Party details</h2></header>
       <div class="row" style="align-items:flex-end">
@@ -451,7 +479,16 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
   </section>
 </main>
 </div>
+<div class="emission" id="emission" hidden role="alert" aria-live="assertive">
+  <div class="emi-in">
+    <p class="eyebrow" id="emiEyebrow">PDA warning</p>
+    <h1 id="emiTitle">Emission incoming</h1>
+    <p class="emi-sub" id="emiSub">Get to shelter now.</p>
+    <p class="emi-count mono" id="emiCount">0:45</p>
+    <div class="row" style="justify-content:center"><button class="btn" type="button" id="emiHide">Hide</button><button class="btn" type="button" id="emiStopHost" hidden>Stop the emission</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="app.js?v=6"></script>
+<script type="module" src="app.js?v=7"></script>
 </body>
 </html>

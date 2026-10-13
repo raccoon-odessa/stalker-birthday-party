@@ -1,6 +1,6 @@
-import * as G from './gear.js?v=6';
-import * as D from './dice.js?v=6';
-import { HOST_HASH } from './config.js?v=6';
+import * as G from './gear.js?v=7';
+import * as D from './dice.js?v=7';
+import { HOST_HASH } from './config.js?v=7';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=6' : './db-firebase.js?v=6'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=7' : './db-firebase.js?v=7'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -71,6 +71,7 @@ async function main(){
   DB.watchCol('feed', {orderBy:['t', 'desc'], limit:40}, rows => { S.feed = rows; if (S.ready && S.tab === 'camp') renderCamp(); });
   DB.watchCol('games', {where:['players', 'array-contains', pid]}, rows => { S.games = rows; if (S.ready){ renderBadge(); if (S.tab === 'dice') renderDice(); } });
   DB.watchDoc('config/party', d => { S.party = d || {}; if (S.ready && S.tab === 'invite') renderInvite(); });
+  DB.watchDoc('config/emission', d => { S.emi = d || {}; emiTick(); if (S.ready && S.tab === 'host') renderEmiHost(); });
   if (isHost) DB.watchCol('links', {}, rows => { S.links = Object.fromEntries(rows.map(r => [r.id, r.token])); if (S.ready && S.tab === 'host') renderHost(); });
 }
 
@@ -522,6 +523,7 @@ const linkFor = token => location.origin + location.pathname + '?id=' + token;
 async function adjust(id, fn){ await DB.tx(async t => { const p = await t.get('players/' + id); if (!p) return; t.update('players/' + id, fn(p)); }); }
 function renderHost(){
   if (!isHost) return;
+  renderEmiHost();
   ['when', 'where', 'note'].forEach(k => { const i = $('p' + k[0].toUpperCase() + k.slice(1)); if (document.activeElement !== i && !i.dataset.dirty) i.value = S.party[k] || ''; });
   $('hostList').replaceChildren(...roster().map(([id, p]) => {
     const row = el('div', 'hrow'), body = el('div', 'tab'); body.style.gap = '10px';
@@ -566,6 +568,110 @@ $('btnAddGuest').addEventListener('click', async () => {
   } catch (e) { console.error(e); toast('Could not create the link.'); }
   $('btnAddGuest').disabled = false;
 });
+
+/* ---------- emission ---------- */
+// config/emission: {id, start, warn, dur, stopped, auto, minMin, maxMin, nextAt}
+S.emi = {};
+const emiPhase = (e, now) => {
+  if (!e || !e.id || e.stopped || !e.start) return 'calm';
+  const t = now - e.start, w = (e.warn || 45) * 1000, d = (e.dur || 30) * 1000;
+  return t < 0 ? 'calm' : t < w ? 'warning' : t < w + d ? 'blowout' : 'calm';
+};
+let emiShownFor = null, emiHidden = null, emiLastPhase = 'calm';
+const SFX = {ctx:null, nodes:[]};
+['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { try { if (!SFX.ctx){ const C = window.AudioContext || window.webkitAudioContext; if (C) SFX.ctx = new C(); } else if (SFX.ctx.state === 'suspended') SFX.ctx.resume(); } catch (e) {} }, {passive:true}));
+function sirenStop(){ SFX.nodes.forEach(n => { try { n.stop(); } catch (e) {} }); SFX.nodes = []; }
+function siren(kind){
+  sirenStop(); const ctx = SFX.ctx; if (!ctx) return;
+  const g = ctx.createGain(); g.gain.value = kind === 'blowout' ? 0.22 : 0.16; g.connect(ctx.destination);
+  const o = ctx.createOscillator(); o.type = 'sawtooth';
+  const lfo = ctx.createOscillator(), lg = ctx.createGain();
+  lfo.frequency.value = kind === 'blowout' ? 0.9 : 0.35; lg.gain.value = kind === 'blowout' ? 260 : 220;
+  o.frequency.value = kind === 'blowout' ? 420 : 560; lfo.connect(lg).connect(o.frequency);
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
+  o.connect(f).connect(g); o.start(); lfo.start(); SFX.nodes.push(o, lfo);
+  if (kind === 'blowout'){ const r = ctx.createOscillator(), rg = ctx.createGain(); r.type = 'sine'; r.frequency.value = 42; rg.gain.value = 0.5; r.connect(rg).connect(ctx.destination); r.start(); SFX.nodes.push(r); }
+}
+function emiTick(){
+  const e = S.emi, now = Date.now(), ph = emiPhase(e, now), box = $('emission');
+  if (ph !== emiLastPhase){
+    if (ph === 'warning'){ siren('warning'); try { navigator.vibrate && navigator.vibrate([600, 300, 600, 300, 600]); } catch (x) {} }
+    else if (ph === 'blowout'){ siren('blowout'); try { navigator.vibrate && navigator.vibrate([1000, 200, 1000, 200, 1000]); } catch (x) {} }
+    else sirenStop();
+    if (emiLastPhase === 'blowout' && ph === 'calm' && S.ready) toast('The emission has passed.');
+    emiLastPhase = ph;
+  }
+  if (ph === 'calm' || emiHidden === e.id + ph){ box.hidden = true; if (S.ready && S.tab === 'host') renderEmiStatus(); return; }
+  box.hidden = false; box.classList.toggle('blow', ph === 'blowout'); $('emiStopHost').hidden = !isHost;
+  const w = (e.warn || 45) * 1000, d = (e.dur || 30) * 1000;
+  const left = Math.max(0, Math.ceil(((ph === 'warning' ? e.start + w : e.start + w + d) - now) / 1000));
+  $('emiEyebrow').textContent = ph === 'warning' ? 'PDA warning' : 'Blowout';
+  $('emiTitle').textContent = ph === 'warning' ? 'Emission incoming' : 'Emission';
+  $('emiSub').textContent = ph === 'warning' ? 'Get to shelter now. Anyone caught outside loses an artefact.' : 'Stay in shelter until it passes.';
+  $('emiCount').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+  if (S.ready && S.tab === 'host') renderEmiStatus();
+}
+setInterval(emiTick, 250);
+$('emiStopHost').addEventListener('click', () => DB.set('config/emission', Object.assign({}, S.emi, {stopped:true})));
+$('emiHide').addEventListener('click', () => { emiHidden = (S.emi.id || '') + emiPhase(S.emi, Date.now()); emiTick(); });
+const emiNum = (id, lo, hi, def) => { const v = Math.round(+$(id).value); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def; };
+function nextRandom(e, from){ const lo = (e.minMin || 30), hi = Math.max(lo, e.maxMin || 60); return from + ((e.warn || 45) + (e.dur || 30)) * 1000 + (lo + Math.random() * (hi - lo)) * 60000; }
+async function startEmission(){
+  const warn = emiNum('emiWarn', 10, 180, 45), dur = emiNum('emiDur', 10, 180, 30), now = Date.now();
+  const e = Object.assign({}, S.emi, {id:G.uid(), start:now, warn, dur, stopped:false});
+  if (e.auto) e.nextAt = nextRandom(e, now);
+  await DB.set('config/emission', e); radio('Emission! Everyone to shelter.');
+}
+// Any open page can fire a scheduled random emission; the transaction makes sure only one does.
+setInterval(async () => {
+  const e = S.emi; if (!S.ready || !e || !e.auto || !e.nextAt || Date.now() < e.nextAt || emiPhase(e, Date.now()) !== 'calm') return;
+  try {
+    let fired = false;
+    await DB.tx(async t => {
+      const cur = await t.get('config/emission'); const now = Date.now();
+      if (!cur || !cur.auto || !cur.nextAt || now < cur.nextAt || emiPhase(cur, now) !== 'calm') return;
+      t.set('config/emission', Object.assign({}, cur, {id:G.uid(), start:now, stopped:false, nextAt:nextRandom(cur, now)})); fired = true;
+    });
+    if (fired) radio('Emission! Everyone to shelter.');
+  } catch (err) { console.error(err); }
+}, 5000);
+function renderEmiStatus(){
+  const e = S.emi, ph = emiPhase(e, Date.now());
+  $('emiStatus').textContent = ph === 'warning' ? 'Warning running' : ph === 'blowout' ? 'Blowout!' : 'Calm';
+  $('btnEmiStop').hidden = ph === 'calm'; $('btnEmiNow').disabled = ph !== 'calm';
+  $('btnEmiAuto').setAttribute('aria-pressed', !!e.auto); $('btnEmiAuto').textContent = 'Random emissions: ' + (e.auto ? 'on' : 'off');
+  if (e.auto && e.nextAt){ const m = Math.max(0, Math.round((e.nextAt - Date.now()) / 60000)); $('emiNext').textContent = 'Next one in about ' + m + ' min'; } else $('emiNext').textContent = '';
+}
+function renderEmiHost(){
+  if (!isHost) return;
+  const e = S.emi;
+  if (document.activeElement !== $('emiWarn') && e.warn) $('emiWarn').value = e.warn;
+  if (document.activeElement !== $('emiDur') && e.dur) $('emiDur').value = e.dur;
+  if (document.activeElement !== $('emiMin') && e.minMin) $('emiMin').value = e.minMin;
+  if (document.activeElement !== $('emiMax') && e.maxMin) $('emiMax').value = e.maxMin;
+  renderEmiStatus();
+  $('emiCaught').replaceChildren(...roster().filter(([, p]) => p.inv.length).map(([id, p]) => {
+    const b = el('button', 'btn', nameOf(p)); b.type = 'button';
+    b.addEventListener('click', async () => {
+      b.disabled = true; let lost = null;
+      try {
+        await DB.tx(async t => { const q = await t.get('players/' + id); const inv = (q && q.inv) || []; if (!inv.length) return; const it = inv[Math.floor(Math.random() * inv.length)]; lost = it.a; t.update('players/' + id, {inv:inv.filter(i => i.id !== it.id)}); });
+        if (lost){ radio(nameOf(p) + ' was caught in the emission and lost ' + lost + '.'); toast(nameOf(p) + ' lost ' + lost + '.'); }
+      } catch (err) { toast('Could not take it. Try again.'); }
+      b.disabled = false;
+    });
+    return b;
+  }));
+}
+$('btnEmiNow').addEventListener('click', () => startEmission().catch(() => toast('Could not start it. Check the connection.')));
+$('btnEmiStop').addEventListener('click', () => DB.set('config/emission', Object.assign({}, S.emi, {stopped:true})));
+$('btnEmiAuto').addEventListener('click', () => {
+  const minMin = emiNum('emiMin', 5, 240, 30), maxMin = Math.max(minMin, emiNum('emiMax', 5, 240, 60));
+  const e = Object.assign({warn:emiNum('emiWarn', 10, 180, 45), dur:emiNum('emiDur', 10, 180, 30)}, S.emi, {minMin, maxMin});
+  e.auto = !S.emi.auto; e.nextAt = e.auto ? nextRandom(e, Date.now()) : null;
+  DB.set('config/emission', e).then(() => toast(e.auto ? 'Random emissions are on.' : 'Random emissions are off.'));
+});
+['emiMin', 'emiMax', 'emiWarn', 'emiDur'].forEach(id => $(id).addEventListener('change', () => { if (!S.emi.id && !S.emi.auto) return; const minMin = emiNum('emiMin', 5, 240, 30); DB.set('config/emission', Object.assign({}, S.emi, {minMin, maxMin:Math.max(minMin, emiNum('emiMax', 5, 240, 60)), warn:emiNum('emiWarn', 10, 180, 45), dur:emiNum('emiDur', 10, 180, 30)})); }));
 
 /* ---------- background sound: psy-radiation ambience ---------- */
 const AMB = {el:null, on:ls.get('zone-sound') !== 'off'};

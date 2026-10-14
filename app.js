@@ -1,7 +1,7 @@
-import * as G from './gear.js?v=10';
-import * as D from './dice.js?v=10';
-import { HOST_HASH } from './config.js?v=10';
-import { QUESTIONS } from './quiz.js?v=10';
+import * as G from './gear.js?v=11';
+import * as D from './dice.js?v=11';
+import { HOST_HASH } from './config.js?v=11';
+import { QUESTIONS } from './quiz.js?v=11';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -50,7 +50,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=10' : './db-firebase.js?v=10'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=11' : './db-firebase.js?v=11'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');

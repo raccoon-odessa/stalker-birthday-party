@@ -1,6 +1,7 @@
-import * as G from './gear.js?v=9';
-import * as D from './dice.js?v=9';
-import { HOST_HASH } from './config.js?v=9';
+import * as G from './gear.js?v=10';
+import * as D from './dice.js?v=10';
+import { HOST_HASH } from './config.js?v=10';
+import { QUESTIONS } from './quiz.js?v=10';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +50,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=9' : './db-firebase.js?v=9'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=10' : './db-firebase.js?v=10'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -102,7 +103,7 @@ document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', 
 function render(){
   if (!S.ready || !me()) return;
   renderBar();
-  ({invite:renderInvite, stalker:renderStalker, pack:renderPack, dice:renderDice, camp:renderCamp, host:renderHost})[S.tab]();
+  ({invite:renderInvite, stalker:renderStalker, pack:renderPack, dice:renderDice, camp:renderCamp, quiz:renderQuiz, host:renderHost})[S.tab]();
 }
 
 /* ---------- invite ---------- */
@@ -568,6 +569,84 @@ $('btnAddGuest').addEventListener('click', async () => {
   } catch (e) { console.error(e); toast('Could not create the link.'); }
   $('btnAddGuest').disabled = false;
 });
+
+/* ---------- quiz of the zone ---------- */
+// The 600 stake is taken when the quiz starts; 3/3 pays back 1,100 (net +500).
+// So leaving or reloading mid-quiz counts as a loss.
+const QUIZ_WIN = 500, QUIZ_LOSS = 600;
+let Q = null; // {qs:[{text, opts, right}], i, picked, results:[], done, busy}
+function quizPick(){
+  let seen = [];
+  try { seen = JSON.parse(ls.get('zone-quiz-seen') || '[]'); } catch (e) {}
+  let pool = QUESTIONS.map((q, i) => i).filter(i => !seen.includes(i));
+  if (pool.length < 3){ seen = []; pool = QUESTIONS.map((q, i) => i); }
+  const ids = [];
+  while (ids.length < 3){ const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; ids.push(k); }
+  ls.set('zone-quiz-seen', JSON.stringify(seen.concat(ids)));
+  return ids.map(k => { const [text, right, ...wrong] = QUESTIONS[k]; const opts = [right, ...wrong]; for (let i = opts.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; } return {text, opts, right}; });
+}
+async function quizStart(){
+  if (Q && Q.busy) return;
+  Q = {busy:true}; renderQuiz();
+  try {
+    let ok = false;
+    await DB.tx(async t => { const p = await t.get('players/' + pid); if (!p || (p.coupons || 0) < QUIZ_LOSS) return; t.update('players/' + pid, {coupons:p.coupons - QUIZ_LOSS}); ok = true; });
+    if (!ok){ Q = null; toast('You need ' + fmt(QUIZ_LOSS) + ' coupons to take the quiz.'); renderQuiz(); return; }
+    Q = {qs:quizPick(), i:0, picked:null, results:[], done:false, busy:false};
+  } catch (e) { console.error(e); Q = null; toast('Lost contact. Try again.'); }
+  renderQuiz();
+}
+async function quizAnswer(opt){
+  if (!Q || Q.done || Q.picked !== null) return;
+  const q = Q.qs[Q.i]; Q.picked = opt;
+  const right = opt === q.right; Q.results.push(right);
+  if (!right){ Q.done = true; radio(nameOf(me()) + ' failed the Quiz of the Zone and lost ' + fmt(QUIZ_LOSS) + ' coupons.'); }
+  else if (Q.results.length === 3){
+    Q.done = true; Q.busy = true; renderQuiz();
+    try { await DB.tx(async t => { const p = await t.get('players/' + pid); t.update('players/' + pid, {coupons:(p.coupons || 0) + QUIZ_LOSS + QUIZ_WIN}); }); radio(nameOf(me()) + ' got all three right in the Quiz of the Zone and won ' + fmt(QUIZ_WIN) + ' coupons.'); }
+    catch (e) { console.error(e); toast('Could not pay out. Tell the host.'); }
+    Q.busy = false;
+  }
+  renderQuiz();
+}
+function quizNext(){ if (!Q || Q.done) return; Q.i++; Q.picked = null; renderQuiz(); }
+function renderQuiz(){
+  const box = $('quizBox');
+  if (!Q || !Q.qs){
+    const poor = me().coupons < QUIZ_LOSS;
+    const b = el('button', 'btn primary', Q && Q.busy ? 'Starting…' : 'Start the quiz'); b.type = 'button'; b.disabled = poor || !!(Q && Q.busy);
+    b.addEventListener('click', quizStart);
+    const rules = el('ul'); rules.style.margin = '0'; rules.style.paddingLeft = '1.2rem';
+    ['Three random questions about the Zone, multiple choice.', 'All three right: you win ' + fmt(QUIZ_WIN) + ' coupons.', 'One wrong answer: you lose ' + fmt(QUIZ_LOSS) + ' coupons and the quiz ends.', 'Leaving the quiz halfway counts as a loss.'].forEach(t => rules.append(el('li', '', t)));
+    box.replaceChildren(el('h2', '', 'Quiz of the Zone'), rules, el('div', 'row'), poor ? el('p', 'note', 'You need at least ' + fmt(QUIZ_LOSS) + ' coupons to play.') : el('span'));
+    box.querySelector('.row').append(b);
+    return;
+  }
+  const q = Q.qs[Q.i], dots = el('div', 'qdots');
+  for (let k = 0; k < 3; k++){ const d = el('i'); d.className = k < Q.results.length ? (Q.results[k] ? 'ok' : 'no') : k === Q.i ? 'now' : ''; dots.append(d); }
+  const opts = el('div', 'qopts');
+  q.opts.forEach(o => {
+    const b = el('button', 'qopt', o); b.type = 'button';
+    if (Q.picked !== null){ b.disabled = true; if (o === q.right) b.classList.add('right'); else if (o === Q.picked) b.classList.add('wrong'); }
+    b.addEventListener('click', () => quizAnswer(o));
+    opts.append(b);
+  });
+  const parts = [dots, el('p', 'qnum', 'Question ' + (Q.i + 1) + ' of 3'), el('p', 'qtext', q.text), opts];
+  if (Q.picked !== null){
+    const row = el('div', 'row');
+    if (!Q.done){ const n = el('button', 'btn primary', 'Next question'); n.type = 'button'; n.addEventListener('click', quizNext); row.append(n); }
+    else {
+      const won = Q.results.length === 3 && Q.results.every(Boolean);
+      parts.push(el('p', 'qresult ' + (won ? 'good' : 'bad'), won ? 'All three right! +' + fmt(QUIZ_WIN) + ' coupons' : 'Wrong. −' + fmt(QUIZ_LOSS) + ' coupons'));
+      const again = el('button', 'btn primary', Q.busy ? 'Paying out…' : 'Play again'); again.type = 'button'; again.disabled = Q.busy;
+      again.addEventListener('click', () => { Q = null; quizStart(); });
+      const back = el('button', 'btn', 'Done'); back.type = 'button'; back.addEventListener('click', () => { Q = null; renderQuiz(); });
+      row.append(again, back);
+    }
+    parts.push(row);
+  }
+  box.replaceChildren(...parts);
+}
 
 /* ---------- emission ---------- */
 // config/emission: {id, start, warn, dur, stopped, auto, minMin, maxMin, nextAt}

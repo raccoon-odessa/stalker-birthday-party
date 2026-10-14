@@ -201,6 +201,20 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 @media (prefers-reduced-motion:reduce){.die{transition:none}}
 
 [hidden]{display:none!important}
+.quiz{max-width:44rem}
+.quiz .qnum{font-family:var(--mono);color:var(--accent);letter-spacing:.12em;text-transform:uppercase;font-size:.85rem}
+.quiz .qtext{font-size:1.3rem;font-weight:600;line-height:1.35}
+.qopts{display:flex;flex-direction:column;gap:8px}
+.qopt{background:var(--panel-2);border:1px solid var(--line-hi);padding:12px 14px;text-align:left;font-size:1.02rem;cursor:pointer;min-height:48px}
+.qopt:hover:not(:disabled){border-color:var(--fg)}
+.qopt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 22%,var(--panel-2))}
+.qopt.wrong{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 22%,var(--panel-2))}
+.qopt:disabled{cursor:default}
+.qdots{display:flex;gap:6px}
+.qdots i{width:28px;height:6px;background:var(--line)}
+.qdots i.ok{background:var(--ok)}.qdots i.no{background:var(--danger)}.qdots i.now{background:var(--accent)}
+.qresult{font-family:var(--display);font-size:2rem;text-transform:uppercase;letter-spacing:.04em}
+.qresult.good{color:var(--ok)}.qresult.bad{color:var(--danger)}
 .emission{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(160,20,10,.85),rgba(20,4,2,.97) 70%);color:#fff;text-align:center}
 .emission.blow{background:radial-gradient(circle at 50% 40%,rgba(255,60,20,.95),rgba(90,0,0,.98) 70%);animation:emiPulse 1s ease-in-out infinite}
 @keyframes emiPulse{50%{filter:brightness(1.35)}}
@@ -262,6 +276,7 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
       <button type="button" role="tab" data-tab="stalker" aria-selected="false">Stalker</button>
       <button type="button" role="tab" data-tab="pack" aria-selected="false">Backpack</button>
       <button type="button" role="tab" data-tab="dice" aria-selected="false">Dice<span class="badge" id="diceBadge" hidden></span></button>
+      <button type="button" role="tab" data-tab="quiz" aria-selected="false">Quiz</button>
       <button type="button" role="tab" data-tab="camp" aria-selected="false">Camp</button>
       <button type="button" role="tab" data-tab="host" aria-selected="false" id="hostTab" hidden>Host</button>
     </nav>
@@ -426,6 +441,11 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
     </div>
   </section>
 
+  <!-- QUIZ -->
+  <section class="tab" id="tab-quiz" role="tabpanel" hidden>
+    <div class="panel quiz" id="quizBox"></div>
+  </section>
+
   <!-- CAMP -->
   <section class="tab" id="tab-camp" role="tabpanel" hidden>
     <div class="panel">
@@ -491,6 +511,6 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=10"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
-import * as G from './gear.js?v=11';
-import * as D from './dice.js?v=11';
-import { HOST_HASH } from './config.js?v=11';
-import { QUESTIONS } from './quiz.js?v=11';
+import * as G from './gear.js?v=12';
+import * as D from './dice.js?v=12';
+import { HOST_HASH } from './config.js?v=12';
+import { QUESTIONS } from './quiz.js?v=12';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -31,8 +31,7 @@ const hostName = () => { const h = S.players.host, n = h && (h.name || '').trim(
 const radio = text => DB.add('feed', {t:Date.now(), text}).catch(e => console.error(e));
 
 function starter(r){
-  const pick = rr => { const pool = G.ART.filter(a => a.r === rr); return pool[Math.floor(r() * pool.length)].name; };
-  return [pick(0), pick(0), pick(0), pick(1)].map(a => ({id:G.uid(), a}));
+  return [{id:G.uid(), a:G.ART[Math.floor(r() * G.ART.length)].name}];
 }
 function newPlayer(name, host){
   const r = G.rng((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
@@ -50,7 +49,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=11' : './db-firebase.js?v=11'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=12' : './db-firebase.js?v=12'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -556,6 +555,20 @@ function renderHost(){
 $('btnParty').addEventListener('click', async () => {
   try { await DB.set('config/party', {when:$('pWhen').value.trim(), where:$('pWhere').value.trim(), note:$('pNote').value.trim()}); ['pWhen', 'pWhere', 'pNote'].forEach(id => delete $(id).dataset.dirty); toast('Party details saved.'); }
   catch (e) { toast('Could not save. Check your connection.'); }
+});
+$('btnResetPacks').addEventListener('click', () => { $('resetPacksConfirm').hidden = false; });
+$('btnResetPacksNo').addEventListener('click', () => { $('resetPacksConfirm').hidden = true; });
+$('btnResetPacksYes').addEventListener('click', async () => {
+  $('resetPacksConfirm').hidden = true; $('btnResetPacks').disabled = true;
+  try {
+    for (const id of Object.keys(S.players)){
+      const a = G.ART[Math.floor(Math.random() * G.ART.length)].name;
+      await DB.update('players/' + id, {inv:[{id:G.uid(), a}]});
+    }
+    radio('The Zone shifted. Every stalker\u2019s backpack now holds one fresh artefact.');
+    toast('Done: everyone has one random artefact.');
+  } catch (e) { console.error(e); toast('Could not finish. Press it again.'); }
+  $('btnResetPacks').disabled = false;
 });
 $('btnAddGuest').addEventListener('click', async () => {
   const name = $('gName').value.trim(); if (!name){ $('gName').focus(); return; }

@@ -495,6 +495,12 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
       <p class="note">Each guest gets their own link. Send it to them; opening it is all they need to do.</p>
     </div>
     <div class="panel">
+      <header><h2>Backpacks</h2></header>
+      <p class="note">Empties every backpack and gives each stalker one random artefact.</p>
+      <div class="row"><button class="btn danger" type="button" id="btnResetPacks">Reset all backpacks</button></div>
+      <div class="row" id="resetPacksConfirm" hidden><span style="color:var(--danger)">Take away everyone’s artefacts?</span><button class="btn danger" type="button" id="btnResetPacksYes">Reset</button><button class="btn" type="button" id="btnResetPacksNo">Cancel</button></div>
+    </div>
+    <div class="panel">
       <header><h2>Stalkers</h2><span class="note">Tap an artefact to take it away</span></header>
       <div class="hostlist" id="hostList"></div>
     </div>
@@ -511,6 +517,6 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="app.js?v=11"></script>
+<script type="module" src="app.js?v=12"></script>
 </body>
 </html>

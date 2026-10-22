@@ -1,3 +1,4 @@
+import { sprite, SPRITE_SIZE } from './sprites.js?v=15';
 // Pixel portraits (36x36) and S.T.A.L.K.E.R. 2 gear/artefact data.
 const N = 36;
 const PAL = ['#0d0f0c','#1f221d','#2f332b','#474c40','#646a59','#8a8f7a','#b8b9a6','#e6e2d3','#3b4a2a','#556b35','#7a8f45','#4a3a2a','#6e5238','#94704a','#b89468','#2a2522','#3e3833','#5e1f1a','#9a2f24','#c8432f','#20304a','#34557a','#5b82a8','#8fb3cf','#2e4a2e','#3f6b38','#5f9448','#a85a1c','#d9822b','#f0b043','#f2d27a','#6d6d6d','#9a9a9a','#c7c7c7','#3a3d42','#575c63','#7d848c','#f1c9a5','#dba57f','#b97a55','#8a5636','#5c3824','#2c3d3a','#6f9a8c','#b5832a','#1a1a1a','#c7a76a','#a64b2a','#4f3524','#8b8b84','#2f8f8a','#7a5aa8','#e3c13a','#a89566','#7d6c45','#4d4560','#6f6588','#18233a','#7a1c2c','#6b6a3a','#d8d6cc','#5a5e3a'];
@@ -214,6 +215,16 @@ function artGrid(a){
   return ICONS[a.name] = g;
 }
 function artIcon(a, px){
+  const sp = sprite(a.name);
+  if (sp){
+    const n = SPRITE_SIZE, c = canvas(n + 2, n + 2), ctx = c.getContext('2d');
+    const at = (x, y) => x >= 0 && y >= 0 && x < n && y < n && sp[y][x];
+    ctx.fillStyle = '#0d0f0c';
+    for (let y = -1; y <= n; y++) for (let x = -1; x <= n; x++) if (!at(x, y) && (at(x-1,y) || at(x+1,y) || at(x,y-1) || at(x,y+1))) ctx.fillRect(x + 1, y + 1, 1, 1);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++){ const v = sp[y][x]; if (v){ ctx.fillStyle = 'rgb(' + v.join(',') + ')'; ctx.fillRect(x + 1, y + 1, 1, 1); } }
+    if (px){ c.style.width = px + 'px'; c.style.height = px + 'px'; }
+    return c;
+  }
   const g = artGrid(a), S = 12, t = TYPES[a.type], c = canvas(S + 2, S + 2), ctx = c.getContext('2d');
   const at = (x, y) => x < 0 || y < 0 || x >= S || y >= S ? -1 : g[y * S + x];
   ctx.fillStyle = '#0d0f0c';

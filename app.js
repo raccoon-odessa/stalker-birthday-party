@@ -1,8 +1,8 @@
-import * as G from './gear.js?v=13';
-import * as D from './dice.js?v=13';
-import { HOST_HASH } from './config.js?v=13';
-import { QUESTIONS } from './quiz.js?v=13';
-import { showCocktail, hideCocktail, COCKTAILS } from './cocktails.js?v=13';
+import * as G from './gear.js?v=14';
+import * as D from './dice.js?v=14';
+import { HOST_HASH } from './config.js?v=14';
+import { QUESTIONS } from './quiz.js?v=14';
+import { showCocktail, hideCocktail, COCKTAILS } from './cocktails.js?v=14';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -50,7 +50,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=13' : './db-firebase.js?v=13'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=14' : './db-firebase.js?v=14'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -205,6 +205,26 @@ $('btnUndo').addEventListener('click', () => { if (S.undo.length) savePlayer({pa
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
 })();
 
+/* ---------- artefacts are clickable everywhere ---------- */
+// An artefact icon that opens its cocktail card when tapped.
+function artButton(name, cls, px){
+  const a = G.ARTBY[name], b = el('button', 'art-btn ' + (cls || '')); b.type = 'button';
+  b.title = name + ' — cocktail recipe'; b.setAttribute('aria-label', name + ': show cocktail recipe');
+  b.append(G.artIcon(a, px));
+  b.addEventListener('click', e => { e.stopPropagation(); showCocktail(name); });
+  return b;
+}
+// Text where every artefact name becomes a link to its cocktail card.
+const ART_RE = new RegExp('(' + G.ART.map(x => x.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+function artText(text, tag, cls){
+  const box = el(tag || 'span', cls);
+  String(text).split(ART_RE).forEach((part, i) => {
+    if (i % 2 && G.ARTBY[part]){ const b = el('button', 'art-link', part); b.type = 'button'; b.addEventListener('click', e => { e.stopPropagation(); showCocktail(part); }); box.append(b); }
+    else if (part) box.append(document.createTextNode(part));
+  });
+  return box;
+}
+
 /* ---------- backpack ---------- */
 async function moveItem(from, to, itemId){
   let name = null;
@@ -237,7 +257,7 @@ function renderPack(){
   const box = $('detail'), it = p.inv.find(i => i.id === S.sel);
   if (!it){ box.replaceChildren(el('h2', '', 'Empty backpack'), el('p', 'note', 'Win artefacts at dice, or earn them at the party.')); return; }
   const a = G.ARTBY[it.a];
-  const big = el('div', 'big'); big.append(G.artIcon(a, 84));
+  const big = artButton(a.name, 'big', 84);
   const rar = el('span', 'tag', G.RAR[a.r].n); rar.style.color = G.rarColor(a.r);
   const kv = el('dl', 'kv');
   [['Anomaly', G.TYPES[a.type].label], ['Value', fmt(G.RAR[a.r].v) + ' coupons']].forEach(([k, v]) => kv.append(el('dt', '', k), el('dd', 'mono', v)));
@@ -391,7 +411,7 @@ function renderIncoming(){
   const g = incoming()[0], box = $('incoming');
   box.hidden = !g || !!view(); if (box.hidden) return;
   const from = S.players[g.a], artIt = g.artA && from && from.inv.find(i => i.id === g.artA);
-  const parts = [el('h2', '', nameOf(from) + ' challenges you to dice'), el('p', '', (g.stake ? fmt(g.stake) + ' coupons each' : 'No coupons') + (artIt ? ', and they put ' + G.ARTBY[artIt.a].name + ' on the line.' : '.'))];
+  const parts = [el('h2', '', nameOf(from) + ' challenges you to dice'), artText((g.stake ? fmt(g.stake) + ' coupons each' : 'No coupons') + (artIt ? ', and they put ' + G.ARTBY[artIt.a].name + ' on the line.' : '.'), 'p')];
   let sel = null;
   if (g.artA){
     const f = el('div', 'field'), lab = el('label', '', 'Your artefact to match'); sel = el('select'); sel.id = 'matchArt'; lab.htmlFor = 'matchArt';
@@ -465,7 +485,7 @@ function renderDice(){
   const over = s.phase === 'over';
   $('btnQuit').textContent = over ? 'Back to the fire' : (v.kind === 'local' && v.meta.mode === 'bot' ? 'Stop practice' : 'Give up');
   $('btnQuit').disabled = over && v.kind === 'live' && v.meta.status !== 'over';
-  $('gameLog').replaceChildren(...s.log.map(t => el('li', '', t)));
+  $('gameLog').replaceChildren(...s.log.map(t => artText(t, 'li')));
   const key = v.kind === 'live' ? v.meta.id : 'local';
   if (S.lastRoll[key] !== undefined && S.lastRoll[key] !== s.rollN && !reduced() && liveDice.length) shake();
   S.lastRoll[key] = s.rollN;
@@ -513,12 +533,12 @@ function renderCamp(){
     const c = el('div', 'contact' + (id === pid ? ' me' : ''));
     const tag = el('span', 'tag'); factionTag(tag, G.FACTIONS[p.look.faction]);
     const head = el('div', 'row'); head.style.gap = '8px'; head.append(el('b', '', nameOf(p)), tag);
-    const minis = el('div', 'minis'); p.inv.slice(0, 10).forEach(it => minis.append(G.artIcon(G.ARTBY[it.a])));
+    const minis = el('div', 'minis'); p.inv.slice(0, 10).forEach(it => minis.append(artButton(it.a, 'mini')));
     const status = id === pid ? 'You' : p.host ? 'Host' : p.rsvp === 'yes' ? 'Coming' : p.rsvp === 'no' ? 'Can’t make it' : 'No reply yet';
     c.append(G.portrait(p), head, el('span', 'mono muted', fmt(p.coupons) + ' coupons · ' + p.inv.length + ' artefacts'), minis, el('small', 'note', status));
     return c;
   }));
-  $('feed').replaceChildren(...(S.feed.length ? S.feed.map(f => { const li = el('li'), d = new Date(f.t); li.append(el('time', '', d.toTimeString().slice(0, 5)), el('span', '', f.text)); return li; }) : [el('li', 'note', 'Quiet so far.')]));
+  $('feed').replaceChildren(...(S.feed.length ? S.feed.map(f => { const li = el('li'), d = new Date(f.t); li.append(el('time', '', d.toTimeString().slice(0, 5)), artText(f.text)); return li; }) : [el('li', 'note', 'Quiet so far.')]));
 }
 
 /* ---------- host ---------- */
@@ -542,7 +562,12 @@ function renderHost(){
     give.addEventListener('click', () => adjust(id, q => ({inv:(q.inv || []).concat([{id:G.uid(), a:artSel.value}])})).then(() => radio('The host gave ' + nameOf(p) + ' a ' + artSel.value + '.')));
     r2.append(artSel, give);
     const inv = el('div', 'hinv');
-    p.inv.forEach(it => { const b = el('button'); b.type = 'button'; b.title = 'Take ' + it.a + ' away'; b.setAttribute('aria-label', 'Take ' + it.a + ' away'); b.append(G.artIcon(G.ARTBY[it.a])); b.addEventListener('click', () => adjust(id, q => ({inv:(q.inv || []).filter(i => i.id !== it.id)}))); inv.append(b); });
+    p.inv.forEach(it => {
+      const g = el('span', 'hitem'), x = el('button', 'hdel', '\u00d7'); x.type = 'button';
+      x.title = 'Take ' + it.a + ' away'; x.setAttribute('aria-label', 'Take ' + it.a + ' away from ' + nameOf(p));
+      x.addEventListener('click', () => adjust(id, q => ({inv:(q.inv || []).filter(i => i.id !== it.id)})));
+      g.append(artButton(it.a, 'mini'), x); inv.append(g);
+    });
     body.append(r1, r2, inv);
     if (!p.host && S.links[id]){
       const line = el('div', 'linkline'), inp = el('input'); inp.readOnly = true; inp.value = linkFor(S.links[id]); inp.setAttribute('aria-label', 'Personal link for ' + nameOf(p));

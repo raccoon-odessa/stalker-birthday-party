@@ -1,7 +1,8 @@
-import * as G from './gear.js?v=12';
-import * as D from './dice.js?v=12';
-import { HOST_HASH } from './config.js?v=12';
-import { QUESTIONS } from './quiz.js?v=12';
+import * as G from './gear.js?v=13';
+import * as D from './dice.js?v=13';
+import { HOST_HASH } from './config.js?v=13';
+import { QUESTIONS } from './quiz.js?v=13';
+import { showCocktail, hideCocktail, COCKTAILS } from './cocktails.js?v=13';
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has('mock');
@@ -49,7 +50,7 @@ function norm(p){
 
 /* ---------- start-up ---------- */
 async function main(){
-  try { DB = await import(MOCK ? './db-mock.js?v=12' : './db-firebase.js?v=12'); }
+  try { DB = await import(MOCK ? './db-mock.js?v=13' : './db-firebase.js?v=13'); }
   catch (e) { boot('No signal', 'The Zone server could not be reached. Check your connection and reload.'); throw e; }
   let token = params.get('id');
   if (token) ls.set('zone-id', token); else token = ls.get('zone-id');
@@ -227,7 +228,7 @@ function renderPack(){
     const a = G.ARTBY[it.a], b = el('button', 'cell'); b.type = 'button';
     b.style.setProperty('--rc', G.rarColor(a.r)); b.setAttribute('aria-pressed', it.id === S.sel); b.setAttribute('aria-label', a.name);
     b.append(el('span', 'glow'), G.artIcon(a, 56));
-    b.addEventListener('click', () => { S.sel = it.id; renderPack(); });
+    b.addEventListener('click', () => { S.sel = it.id; renderPack(); showCocktail(it.a); });
     return b;
   });
   const total = Math.max(16, Math.ceil((cells.length + 1) / 8) * 8);
@@ -242,7 +243,9 @@ function renderPack(){
   [['Anomaly', G.TYPES[a.type].label], ['Value', fmt(G.RAR[a.r].v) + ' coupons']].forEach(([k, v]) => kv.append(el('dt', '', k), el('dd', 'mono', v)));
   const others = Object.entries(S.players).filter(([id]) => id !== pid);
   const head = el('div', 'row'); head.style.justifyContent = 'center'; head.append(rar);
-  const parts = [big, el('h2', '', a.name), head, el('p', 'muted', a.line), kv];
+  const rb = el('button', 'btn primary recipe-btn', COCKTAILS[a.name] ? 'Show cocktail recipe' : ''); rb.type = 'button'; rb.hidden = !COCKTAILS[a.name];
+  rb.addEventListener('click', () => showCocktail(a.name));
+  const parts = [big, el('h2', '', a.name), head, el('p', 'muted', a.line), kv, rb];
   if (others.length){
     const give = el('div', 'field'), lab = el('label', '', 'Give to'), sel = el('select'), btn = el('button', 'btn', 'Give'), r = el('div', 'row');
     lab.htmlFor = 'giveTo'; sel.id = 'giveTo'; btn.type = 'button';
@@ -582,6 +585,10 @@ $('btnAddGuest').addEventListener('click', async () => {
   } catch (e) { console.error(e); toast('Could not create the link.'); }
   $('btnAddGuest').disabled = false;
 });
+
+$('cocktailClose').addEventListener('click', hideCocktail);
+$('cocktail').addEventListener('click', e => { if (e.target.id === 'cocktail') hideCocktail(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('cocktail').hidden) hideCocktail(); });
 
 /* ---------- quiz of the zone ---------- */
 // The 600 stake is taken when the quiz starts; 3/3 pays back 1,100 (net +500).

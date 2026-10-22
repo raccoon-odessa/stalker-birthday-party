@@ -10,7 +10,7 @@
 <meta property="og:description" content="Incoming PDA message. Open your personal link to make your stalker.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e100d'/%3E%3Cpath d='M8 2l6 11H2z' fill='%23e3a72f'/%3E%3Ccircle cx='8' cy='10' r='1.6' fill='%230e100d'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Share+Tech+Mono&family=Fira+Sans+Extra+Condensed:wght@600;700&family=Fira+Sans:ital,wght@0,400;0,600;1,400&family=PT+Mono&display=swap">
 <style>
 
 /* Layout: a stalker PDA. Sticky top bar with your stalker and coupons, five PDA tabs
@@ -201,6 +201,32 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
 @media (prefers-reduced-motion:reduce){.die{transition:none}}
 
 [hidden]{display:none!important}
+.cocktail{position:fixed;inset:0;z-index:40;background:rgba(8,9,7,.86);overflow:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.cocktail-in{max-width:1160px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.cocktail-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0}
+.cocktail-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:6px}
+.bc{--ink:#1d1c18;--soft:#4a463c;background:#efe9dc;color:var(--ink);border-top:14px solid var(--c);padding:30px 28px 26px;display:flex;flex-direction:column;gap:16px;font-family:Barlow,Arial,sans-serif;font-size:16px;line-height:1.42;min-width:0}
+.bc-ru{font-family:'Fira Sans',Arial,sans-serif}
+.bc-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.bc-ru .bc-top{font-family:'PT Mono',monospace;letter-spacing:.06em}
+.bc-type{color:var(--c)}
+.bc-hero{display:flex;align-items:center;gap:16px}
+.bc-icon{width:68px;height:68px;flex:none;fill:none;stroke:var(--ink);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.bc-name{margin:0;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:clamp(2.2rem,7vw,3.6rem);line-height:.95;text-transform:uppercase;color:var(--ink)}
+.bc-ru .bc-name,.bc-ru h3,.bc-ru .bc-foot strong{font-family:'Fira Sans Extra Condensed','Arial Narrow',sans-serif}
+.bc-tag{margin:6px 0 0;font-style:italic;color:var(--soft)}
+.bc-sec{display:flex;flex-direction:column;gap:5px}
+.bc-sec h3{margin:0;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+.bc-sec p{margin:0}
+.bc-rule{border-top:2px solid var(--ink);padding-top:12px}
+.bc-rows{display:grid;grid-template-columns:4.4rem minmax(0,1fr);column-gap:10px;font-variant-numeric:tabular-nums}
+.bc-foot{margin-top:auto;border-top:2px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.bc-foot small{display:block;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.bc-foot strong{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:28px;text-transform:uppercase}
+.bc-foot p{margin:0;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--soft);text-align:right;max-width:14rem}
+.bc-ru .bc-foot p,.bc-ru .bc-foot small{font-family:'PT Mono',monospace}
+.recipe-btn{align-self:stretch}
+
 .quiz{max-width:44rem}
 .quiz .qnum{font-family:var(--mono);color:var(--accent);letter-spacing:.12em;text-transform:uppercase;font-size:.85rem}
 .quiz .qtext{font-size:1.3rem;font-weight:600;line-height:1.35}
@@ -516,7 +542,13 @@ details.rules summary{cursor:pointer;font-family:var(--display);text-transform:u
     <div class="row" style="justify-content:center"><button class="btn" type="button" id="emiHide">Hide</button><button class="btn" type="button" id="emiStopHost" hidden>Stop the emission</button></div>
   </div>
 </div>
+<div class="cocktail" id="cocktail" hidden role="dialog" aria-modal="true" aria-label="Cocktail recipe">
+  <div class="cocktail-in">
+    <div class="cocktail-bar"><span class="eyebrow">Zone Bar · Бар «Зона»</span><button class="btn" type="button" id="cocktailClose">Close · Закрыть</button></div>
+    <div class="cocktail-cards" id="cocktailCards"></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="app.js?v=12"></script>
+<script type="module" src="app.js?v=13"></script>
 </body>
 </html>

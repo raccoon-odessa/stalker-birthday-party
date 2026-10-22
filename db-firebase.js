@@ -1,7 +1,7 @@
 // Firestore adapter. db-mock.js exposes the same functions for local testing.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, where, orderBy, limit, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { FIREBASE } from './config.js?v=12';
+import { FIREBASE } from './config.js?v=13';
 
 const db = getFirestore(initializeApp(FIREBASE));
 const ref = p => doc(db, ...p.split('/'));

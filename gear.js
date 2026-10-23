@@ -1,4 +1,4 @@
-import { sprite, SPRITE_SIZE } from './sprites.js?v=15';
+import { sprite, SPRITE_SIZE } from './sprites.js?v=16';
 // Pixel portraits (36x36) and S.T.A.L.K.E.R. 2 gear/artefact data.
 const N = 36;
 const PAL = ['#0d0f0c','#1f221d','#2f332b','#474c40','#646a59','#8a8f7a','#b8b9a6','#e6e2d3','#3b4a2a','#556b35','#7a8f45','#4a3a2a','#6e5238','#94704a','#b89468','#2a2522','#3e3833','#5e1f1a','#9a2f24','#c8432f','#20304a','#34557a','#5b82a8','#8fb3cf','#2e4a2e','#3f6b38','#5f9448','#a85a1c','#d9822b','#f0b043','#f2d27a','#6d6d6d','#9a9a9a','#c7c7c7','#3a3d42','#575c63','#7d848c','#f1c9a5','#dba57f','#b97a55','#8a5636','#5c3824','#2c3d3a','#6f9a8c','#b5832a','#1a1a1a','#c7a76a','#a64b2a','#4f3524','#8b8b84','#2f8f8a','#7a5aa8','#e3c13a','#a89566','#7d6c45','#4d4560','#6f6588','#18233a','#7a1c2c','#6b6a3a','#d8d6cc','#5a5e3a'];

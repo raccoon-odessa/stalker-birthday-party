@@ -24,6 +24,14 @@ def _try_ip(dev, ip, ver=None):
             pass
     return None
 
+def _local(ip):
+    """Only home-network addresses. The cloud reports the internet IP, which never answers."""
+    try:
+        a, b = [int(x) for x in ip.split(".")[:2]]
+    except Exception:
+        return False
+    return a == 10 or (a == 192 and b == 168) or (a == 172 and 16 <= b <= 31)
+
 def _save(ip):
     with open(IP_FILE, "w", encoding="utf-8") as f:
         f.write(ip)
@@ -34,7 +42,7 @@ def connect(dev):
         saved.append(open(IP_FILE, encoding="utf-8").read().strip())
     if dev.get("ip") and dev["ip"].count(".") == 3:
         saved.append(dev["ip"])
-    for ip in [s for s in saved if s]:
+    for ip in [s for s in saved if s and _local(s)]:
         print("Trying the lamp at", ip, "...")
         b = _try_ip(dev, ip)
         if b:

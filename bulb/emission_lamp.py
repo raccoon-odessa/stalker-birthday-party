@@ -14,7 +14,8 @@ FADE_SECONDS = 10
 
 with open("devices.json", encoding="utf-8") as f:
     dev = json.load(f)[0]
-bulb = tinytuya.BulbDevice(dev["id"], address="Auto", local_key=dev["key"])
+from lamp_connect import connect
+bulb = connect(dev)
 bulb.set_socketPersistent(True)
 
 current = {}

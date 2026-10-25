@@ -17,7 +17,8 @@ if not dev:
     sys.exit("No device matches '%s'. Names found: %s" % (wanted, ", ".join(d.get("name", "?") for d in devices)))
 
 print("Bulb:", dev.get("name"), "| id", dev["id"])
-bulb = tinytuya.BulbDevice(dev["id"], address="Auto", local_key=dev["key"])
+from lamp_connect import connect
+bulb = connect(dev)
 before = bulb.status()
 if not before or "Error" in before:
     sys.exit("Could not reach the bulb on the network: %s\nIs the PC on the same wifi as the bulb?" % before)
